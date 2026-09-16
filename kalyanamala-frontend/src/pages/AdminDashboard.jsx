@@ -12,6 +12,7 @@ const AdminDashboard = () => {
   const [profiles,setProfiles] = useState([]);
   const [loading,setLoading] = useState(true);
   const [error,setError] = useState('');
+  const [search,setSearch] = useState('');
 
   const headers = useMemo(
     () => ({
@@ -20,13 +21,14 @@ const AdminDashboard = () => {
     [token]
   );
 
-  const loadProfiles = useCallback(async () => {
+  const loadProfiles = useCallback(async (term = '') => {
     try {
       setLoading(true);
       setError('');
 
       const res = await axios.get(`${API_BASE}/api/profiles`, {
-        headers
+        headers,
+        params: String(term).trim() ? { search: String(term).trim() } : undefined
       });
 
       setProfiles(res.data.profiles || []);
@@ -114,12 +116,11 @@ const AdminDashboard = () => {
         </div>
       )}
 
-      <div style={{ marginBottom: '20px' }}>
+      <div style={{ marginBottom: '20px', display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
         <button
           onClick={() => navigate('/admin/profiles/create')}
           style={{
             padding: '10px 16px',
-            marginRight: '10px',
             cursor: 'pointer'
           }}
         >
@@ -127,7 +128,7 @@ const AdminDashboard = () => {
         </button>
 
         <button
-          onClick={loadProfiles}
+          onClick={() => loadProfiles(search)}
           style={{
             padding: '10px 16px',
             cursor: 'pointer'
@@ -135,6 +136,28 @@ const AdminDashboard = () => {
         >
           Refresh Profiles
         </button>
+
+        <form
+          onSubmit={(e) => { e.preventDefault(); loadProfiles(search); }}
+          style={{ display: 'flex', gap: 8, flex: 1, minWidth: 280 }}
+        >
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name or profile ID (M00001)"
+            style={{ flex: 1, padding: '10px 12px', border: '1px solid #ccc', borderRadius: 6 }}
+          />
+          <button type="submit" style={{ padding: '10px 16px', cursor: 'pointer' }}>Search</button>
+          {search && (
+            <button
+              type="button"
+              onClick={() => { setSearch(''); loadProfiles(''); }}
+              style={{ padding: '10px 16px', cursor: 'pointer' }}
+            >
+              Clear
+            </button>
+          )}
+        </form>
       </div>
 
       <section

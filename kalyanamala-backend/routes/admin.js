@@ -7,6 +7,7 @@ const User = require('../models/User');
 const Profile = require('../models/Profile');
 const { PASSWORD_HINT, applyDefaultPassword } = require('../utils/defaultPassword');
 const { notifyTemporaryPassword } = require('../utils/notifyPassword');
+const { generateProfileId, buildProfileSearchFilter } = require('../utils/profileId');
 
 // ==========================================
 // AUTH MIDDLEWARE
@@ -172,13 +173,6 @@ const profileValidation = [
 // ==========================================
 // HELPERS
 // ==========================================
-function generateProfilePrefix(gender) {
-  const now = new Date();
-  const yy = String(now.getFullYear()).slice(-2);
-  const mm = String(now.getMonth() + 1).padStart(2, '0');
-  const genderCode = gender === 'male' ? 'M' : 'F';
-  return `KM-${yy}${mm}${genderCode}`;
-}
 
 function buildProfilePayload(bodyData, reqUserId, isAdminCreate = false) {
   const profilePayload = {
@@ -502,18 +496,7 @@ router.get('/profiles', authMiddleware, adminMiddleware, listProfilesValidation,
     }
 
     if (search) {
-      query.$or = [
-        { profileId: { $regex: search, $options: 'i' } },
-        { 'userId.firstName': { $regex: search, $options: 'i' } },
-        { 'userId.lastName': { $regex: search, $options: 'i' } },
-        { 'userId.surname': { $regex: search, $options: 'i' } },
-        { 'userId.email': { $regex: search, $options: 'i' } },
-        { 'userId.phone': { $regex: search, $options: 'i' } },
-        { religion: { $regex: search, $options: 'i' } },
-        { occupation: { $regex: search, $options: 'i' } },
-        { 'currentAddress.city': { $regex: search, $options: 'i' } },
-        { 'currentAddress.state': { $regex: search, $options: 'i' } }
-      ];
+      Object.assign(query, await buildProfileSearchFilter(search, User));
     }
 
     const profiles = await Profile.find(query)
@@ -607,17 +590,7 @@ router.post('/profiles', authMiddleware, adminMiddleware, profileValidation, asy
       }
     }
 
-    const prefix = generateProfilePrefix(req.body.gender);
-    const lastProfile = await Profile.findOne({
-      profileId: new RegExp(`^${prefix}`)
-    }).sort({ profileId: -1 });
-
-    let sequence = 1;
-    if (lastProfile?.profileId) {
-      sequence = parseInt(lastProfile.profileId.slice(-5), 10) + 1;
-    }
-
-    const profileId = `${prefix}${String(sequence).padStart(5, '0')}`;
+    const profileId = await generateProfileId(req.body.gender);
 
     const profileData = buildProfilePayload(req.body, req.userId, true);
 

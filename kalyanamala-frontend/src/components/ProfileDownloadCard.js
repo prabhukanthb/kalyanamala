@@ -58,7 +58,7 @@ const ProfileDownloadCard = ({ profile, onClose }) => {
         backgroundColor: '#ffffff'
       });
       const link = document.createElement('a');
-      link.download = `profile-${String(profile.profileId || '').slice(-6)}.png`;
+      link.download = `profile-${profile.profileId || 'card'}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
     } catch (e) {
@@ -114,7 +114,7 @@ const ProfileDownloadCard = ({ profile, onClose }) => {
             padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
           }}>
             <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: 1 }}>{BRAND}</div>
-            <div style={{ fontSize: 15 }}>Profile ID: {String(profile.profileId || '').slice(-6)}</div>
+            <div style={{ fontSize: 15 }}>Profile ID: {profile.profileId || '-'}</div>
           </div>
 
           {/* top: basics left, photo right */}

@@ -1,5 +1,6 @@
 import React from 'react';
-import { formatHeight } from '../utils/profileFormHelpers';
+import { formatHeight, prettyLabel, fullName, formatIncome } from '../utils/profileFormHelpers';
+import ProfileDownloadCard from './ProfileDownloadCard';
 
 const API_BASE = 'https://kalyanamala-backend-production.up.railway.app';
 
@@ -25,7 +26,7 @@ const R = ({ label, value }) => (
 const H = ({ children }) => (
   <h4 style={{
     margin: '18px 0 8px', fontSize: 14, textTransform: 'uppercase', letterSpacing: 0.5,
-    color: '#2196F3', borderBottom: '1px solid #eee', paddingBottom: 6
+    color: '#8B1E3F', borderBottom: '1px solid #f0e4d0', paddingBottom: 6
   }}>{children}</h4>
 );
 
@@ -40,13 +41,9 @@ const fieldLabels = {
 
 const digitsOnly = (value, max) => String(value || '').replace(/\D/g, '').slice(0, max);
 
-const prettyLabel = (value) => {
-  if (!value) return '';
-  return String(value).replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-};
-
 const ProfileViewModal = ({ profile, isAdmin, onClose }) => {
   const [active,setActive] = React.useState(0);
+  const [showDownload,setShowDownload] = React.useState(false);
 
   const [editing,setEditing] = React.useState(false);
   const [savingAcct,setSavingAcct] = React.useState(false);
@@ -68,8 +65,8 @@ const ProfileViewModal = ({ profile, isAdmin, onClose }) => {
   const age = calcAge(profile.dateOfBirth);
 
   const name = editing || acctOk
-    ? `${acct.firstName} ${acct.lastName}`.trim()
-    : `${profile.firstName || profile.userId?.firstName || ''} ${profile.lastName || profile.userId?.lastName || ''}`.trim();
+    ? [acct.firstName, acct.lastName, acct.surname].filter(Boolean).join(' ')
+    : fullName(profile);
 
   const saveAccount = async () => {
     setSavingAcct(true);
@@ -144,21 +141,34 @@ const ProfileViewModal = ({ profile, isAdmin, onClose }) => {
         style={{ maxWidth: 900, margin: '0 auto', background: '#fff', borderRadius: 12, overflow: 'hidden' }}
       >
         <div style={{
-          background: 'linear-gradient(90deg,#2196F3,#21CBF3)', color: '#fff', padding: '16px 22px',
+          background: 'linear-gradient(90deg,#8B1E3F,#b43b4a)', color: '#fff', padding: '16px 22px',
           display: 'flex', justifyContent: 'space-between', alignItems: 'center'
         }}>
           <div>
             <h2 style={{ margin: 0, fontSize: 22 }}>{name || 'Member'}</h2>
             <div style={{ fontSize: 13, opacity: 0.95 }}>
+              {profile.profileId ? `${profile.profileId} · ` : ''}
               {age ? `${age} yrs` : ''}
               {formatHeight(profile.heightFeet, profile.heightInches) ? ` · ${formatHeight(profile.heightFeet, profile.heightInches)}` : ''}
               {profile.currentAddress?.city ? ` · ${profile.currentAddress.city}` : ''}
             </div>
           </div>
-          <button onClick={onClose} style={{
-            background: 'rgba(255,255,255,0.25)', border: 'none', color: '#fff',
-            width: 32, height: 32, borderRadius: '50%', cursor: 'pointer', fontSize: 18
-          }}>×</button>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <button
+              type="button"
+              onClick={() => setShowDownload(true)}
+              style={{
+                background: '#fff', color: '#8B1E3F', border: 'none',
+                padding: '8px 14px', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 13
+              }}
+            >
+              Download
+            </button>
+            <button onClick={onClose} style={{
+              background: 'rgba(255,255,255,0.25)', border: 'none', color: '#fff',
+              width: 32, height: 32, borderRadius: '50%', cursor: 'pointer', fontSize: 18
+            }}>×</button>
+          </div>
         </div>
 
         <div style={{ display: 'flex', gap: 24, padding: 22, flexWrap: 'wrap' }}>
@@ -318,7 +328,7 @@ const ProfileViewModal = ({ profile, isAdmin, onClose }) => {
             <R label="Occupation" value={profile.occupation || ''} />
             <R label="Company" value={profile.companyName || ''} />
             <R label="Job Location" value={profile.jobLocation || ''} />
-            <R label="Income" value={profile.income ? `${profile.incomeCurrency || 'INR'} ${profile.income}` : ''} />
+            <R label="Income" value={formatIncome(profile.income)} />
 
             <H>Current Address</H>
             <R label="Street" value={profile.currentAddress?.streetName || ''} />
@@ -336,11 +346,14 @@ const ProfileViewModal = ({ profile, isAdmin, onClose }) => {
 
             <H>About &amp; Preference</H>
             <p style={{ fontSize: 14, lineHeight: 1.6 }}>{profile.aboutMe || ''}</p>
-            <R label="Preferred Match" value={profile.preferredMatch || ''} />
+            <R label="Preferred Match" value={prettyLabel(profile.preferredMatch)} />
             <R label="Partner Requirement" value={profile.partnerRequirement || ''} />
           </div>
         </div>
       </div>
+      {showDownload && (
+        <ProfileDownloadCard profile={profile} onClose={() => setShowDownload(false)} />
+      )}
     </div>
   );
 };

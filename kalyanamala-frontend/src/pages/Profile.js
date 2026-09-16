@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   HEIGHT_OPTIONS,
   formatHeight,
+  formatIncome,
   heightToValue,
   lookupIndianPincode,
   matchStateOption,
@@ -833,7 +834,7 @@ const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
               <Row label="Job Title" value={profile.jobTitle || ''} />
               <Row label="Job Location" value={profile.jobLocation || ''} />
               <Row label="Industry" value={profile.industry || ''} />
-              <Row label="Income" value={profile.income ? `${profile.incomeCurrency || 'INR'} ${profile.income}` : ''} />
+              <Row label="Income" value={formatIncome(profile.income)} />
 
               <h4 style={detailGroupTitle}>Current Address</h4>
               <Row label="Street" value={profile.currentAddress?.streetName || ''} />

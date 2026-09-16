@@ -306,7 +306,7 @@ const Profile = () => {
     };
 
     loadProfile();
-  }, [token,navigate]);
+  }, [token, navigate, user?.alternativePhone]);
 
   useEffect(() => {
     if (activePhoto > photos.length - 1) setActivePhoto(0);
@@ -665,6 +665,12 @@ const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
       {error && (
         <div style={{ color: 'red', marginBottom: 15, padding: 10, background: '#ffebee', borderRadius: 6 }}>
           {error}
+        </div>
+      )}
+
+      {notice && (
+        <div style={{ color: '#1b7a3d', marginBottom: 15, padding: 10, background: '#e6f7ea', borderRadius: 6 }}>
+          {notice}
         </div>
       )}
 

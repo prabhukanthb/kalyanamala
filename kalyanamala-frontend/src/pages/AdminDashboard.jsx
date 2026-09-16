@@ -127,14 +127,25 @@ const AdminDashboard = () => {
     deleted: stats?.deletedProfiles ?? profiles.filter((p) => p.approvalStatus === 'deleted').length
   };
 
+  const applyStatus = (next) => {
+    setStatus(next);
+    loadProfiles(search, next);
+  };
+
+  const signedInAs = [user?.firstName, user?.lastName, user?.surname].filter(Boolean).join(' ');
+
   return (
     <div style={page}>
+      <style>{`
+        .admin-row:hover td { background: #f5faff; }
+        .admin-stat:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(16,40,80,0.1); }
+      `}</style>
       <div style={hero}>
         <div>
           <div style={{ fontSize: 13, opacity: 0.9, letterSpacing: 0.6, textTransform: 'uppercase' }}>Kalyanamala</div>
           <h1 style={{ margin: '6px 0 0', fontSize: 28 }}>Admin Dashboard</h1>
           <div style={{ marginTop: 6, opacity: 0.95 }}>
-            {user?.firstName ? `Signed in as ${user.firstName}${user.surname ? ` ${user.surname}` : ''}` : 'Manage profiles, IDs, and approvals'}
+            {signedInAs ? `Signed in as ${signedInAs}` : 'Manage profiles, IDs, and approvals'}
           </div>
         </div>
         <button onClick={() => navigate('/admin/profiles/create')} style={primaryBtn}>
@@ -143,11 +154,11 @@ const AdminDashboard = () => {
       </div>
 
       <div style={statGrid}>
-        <StatCard label="Total profiles" value={counts.total} color="#2196F3" />
-        <StatCard label="Pending" value={counts.pending} color="#e6a100" />
-        <StatCard label="Approved" value={counts.approved} color="#2e9e57" />
-        <StatCard label="Rejected" value={counts.rejected} color="#c0392b" />
-        <StatCard label="Deleted" value={counts.deleted} color="#667" />
+        <StatCard label="Total profiles" value={counts.total} color="#2196F3" active={status === 'all'} onClick={() => applyStatus('all')} />
+        <StatCard label="Pending" value={counts.pending} color="#e6a100" active={status === 'pending'} onClick={() => applyStatus('pending')} />
+        <StatCard label="Approved" value={counts.approved} color="#2e9e57" active={status === 'approved'} onClick={() => applyStatus('approved')} />
+        <StatCard label="Rejected" value={counts.rejected} color="#c0392b" active={status === 'rejected'} onClick={() => applyStatus('rejected')} />
+        <StatCard label="Deleted" value={counts.deleted} color="#667" active={status === 'deleted'} onClick={() => applyStatus('deleted')} />
       </div>
 
       {error && <div style={errorBox}>{error}</div>}
@@ -176,17 +187,21 @@ const AdminDashboard = () => {
           </button>
         </div>
 
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12, alignItems: 'center' }}>
           {STATUS_FILTERS.map((item) => (
             <button
               key={item}
               type="button"
-              onClick={() => { setStatus(item); loadProfiles(search, item); }}
+              onClick={() => applyStatus(item)}
               style={chip(status === item)}
             >
               {item === 'all' ? 'All' : item[0].toUpperCase() + item.slice(1)}
+              <span style={chipCount}>{item === 'all' ? counts.total : counts[item]}</span>
             </button>
           ))}
+          <div style={{ marginLeft: 'auto', fontSize: 13, color: '#667' }}>
+            {loading ? 'Loading…' : `${profiles.length} shown`}
+          </div>
         </div>
 
         <div style={{ overflowX: 'auto' }}>
@@ -212,10 +227,10 @@ const AdminDashboard = () => {
               ) : profiles.length ? (
                 profiles.map((p) => {
                   const tone = statusTone(p.approvalStatus);
-                  const name = `${p.userId?.firstName || ''} ${p.userId?.lastName || ''}`.trim() || '-';
+                  const name = [p.userId?.firstName, p.userId?.lastName, p.userId?.surname].filter(Boolean).join(' ') || '-';
                   const pct = Number(p.profileCompletion || 0);
                   return (
-                    <tr key={p._id} style={tr}>
+                    <tr key={p._id} className="admin-row" style={tr}>
                       <td style={td}>
                         <span style={idBadge}>{p.profileId || '-'}</span>
                       </td>
@@ -253,7 +268,10 @@ const AdminDashboard = () => {
                 })
               ) : (
                 <tr>
-                  <td colSpan="9" style={emptyCell}>No profiles match this search.</td>
+                  <td colSpan="9" style={emptyCell}>
+                    <div style={{ fontWeight: 600, color: '#334', marginBottom: 6 }}>No profiles match this search</div>
+                    <div>Try another name, profile ID such as M00001, or a different status.</div>
+                  </td>
                 </tr>
               )}
             </tbody>
@@ -289,11 +307,11 @@ const AdminDashboard = () => {
   );
 };
 
-const StatCard = ({ label, value, color }) => (
-  <div style={statCard}>
+const StatCard = ({ label, value, color, active, onClick }) => (
+  <button type="button" className="admin-stat" onClick={onClick} style={{ ...statCard, border: active ? `2px solid ${color}` : '2px solid transparent' }}>
     <div style={{ fontSize: 13, color: '#667' }}>{label}</div>
     <div style={{ fontSize: 28, fontWeight: 700, color, marginTop: 4 }}>{value}</div>
-  </div>
+  </button>
 );
 
 const page = { maxWidth: 1280, margin: '0 auto', padding: '24px 20px 48px', background: '#f4f7fb', minHeight: 'calc(100vh - 64px)' };
@@ -310,7 +328,8 @@ const hero = {
   marginBottom: 18
 };
 const statGrid = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 18 };
-const statCard = { background: '#fff', borderRadius: 12, padding: '16px 18px', boxShadow: '0 1px 8px rgba(16,40,80,0.06)' };
+const statCard = { background: '#fff', borderRadius: 12, padding: '16px 18px', boxShadow: '0 1px 8px rgba(16,40,80,0.06)', textAlign: 'left', cursor: 'pointer', transition: 'box-shadow 0.15s ease, transform 0.15s ease' };
+const chipCount = { marginLeft: 8, fontSize: 12, background: '#eef3f8', color: '#445', borderRadius: 999, padding: '1px 7px', fontWeight: 700 };
 const card = { background: '#fff', borderRadius: 14, padding: 18, boxShadow: '0 1px 8px rgba(16,40,80,0.06)' };
 const toolbar = { display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: 14 };
 const searchInput = { flex: 1, minWidth: 220, padding: '10px 12px', border: '1px solid #d5dee8', borderRadius: 8, fontSize: 14 };

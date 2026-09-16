@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatHeight, prettyLabel, fullName } from '../utils/profileFormHelpers';
+import { formatHeight, prettyLabel, fullName, formatIncome } from '../utils/profileFormHelpers';
 import ProfileDownloadCard from './ProfileDownloadCard';
 
 const API_BASE = 'https://kalyanamala-backend-production.up.railway.app';
@@ -328,7 +328,7 @@ const ProfileViewModal = ({ profile, isAdmin, onClose }) => {
             <R label="Occupation" value={profile.occupation || ''} />
             <R label="Company" value={profile.companyName || ''} />
             <R label="Job Location" value={profile.jobLocation || ''} />
-            <R label="Income" value={profile.income ? `${profile.incomeCurrency || 'INR'} ${profile.income}` : ''} />
+            <R label="Income" value={formatIncome(profile.income)} />
 
             <H>Current Address</H>
             <R label="Street" value={profile.currentAddress?.streetName || ''} />

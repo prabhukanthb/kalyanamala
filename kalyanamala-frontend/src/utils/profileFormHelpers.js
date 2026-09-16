@@ -148,6 +148,16 @@ export const fullName = (profile) => {
   ].filter(Boolean).join(' ');
 };
 
+export const formatIncome = (income) => {
+  const n = Number(income);
+  if (!Number.isFinite(n) || n <= 0) return '';
+  const lacs = Math.round((n / 100000) * 10) / 10;
+  if (lacs <= 0) return '';
+  const amount = Number.isInteger(lacs) ? String(lacs) : String(lacs);
+  const unit = lacs === 1 ? 'lac' : 'lacs';
+  return `${amount} ${unit}`;
+};
+
 export const lookupIndianPincode = async (pin) => {
   if (!/^[0-9]{6}$/.test(pin)) return null;
   const res = await fetch(`https://api.postalpincode.in/pincode/${pin}`);

@@ -42,6 +42,8 @@ test('PNG card shows native places and partner requirement without contact PII',
   expect(screen.getByText('Looking for a kind partner from the Mala community.')).toBeInTheDocument();
   expect(screen.getByText('Never Married')).toBeInTheDocument();
   expect(screen.getByText('M00001')).toBeInTheDocument();
+  expect(screen.getByText('8 lacs')).toBeInTheDocument();
+  expect(screen.queryByText('800000')).not.toBeInTheDocument();
   expect(screen.queryByText('secret@example.com')).not.toBeInTheDocument();
   expect(screen.queryByText('9876543210')).not.toBeInTheDocument();
   expect(screen.queryByText('9123456789')).not.toBeInTheDocument();

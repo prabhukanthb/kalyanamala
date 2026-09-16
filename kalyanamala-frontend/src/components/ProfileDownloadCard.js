@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import html2canvas from 'html2canvas';
-import { formatHeight, fullName, prettyLabel } from '../utils/profileFormHelpers';
+import { formatHeight, fullName, prettyLabel, formatIncome } from '../utils/profileFormHelpers';
 
 const BRAND = 'Kalyanamala';
 const BRAND_LINE = 'New Kalyanamala Matrimony';
@@ -195,7 +195,7 @@ const ProfileDownloadCard = ({ profile, onClose }) => {
                   <F label="Education" value={profile.highestEducation || ''} />
                   <F label="Occupation" value={profile.occupation || ''} />
                   <F label="Company" value={profile.companyName || ''} />
-                  <F label="Annual Income" value={profile.income ? `${profile.incomeCurrency || 'INR'} ${profile.income}` : ''} />
+                  <F label="Annual Income" value={formatIncome(profile.income)} />
                 </Group>
                 <Group title="Places">
                   <F label="Native Place" value={profile.nativePlace || ''} />

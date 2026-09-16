@@ -112,6 +112,52 @@ export const pinLookupMessage = (status) => {
 
 export const pinLookupColor = (status) => (status === 'filled' ? '#1b7a3d' : '#555');
 
+export const prettyLabel = (value, empty = '') => {
+  if (value === undefined || value === null || value === '') return empty;
+  const map = {
+    Nevermarried: 'Never Married',
+    never_married: 'Never Married',
+    AwaitingDivorce: 'Awaiting Divorce',
+    awaiting_divorce: 'Awaiting Divorce',
+    Divorced: 'Divorced',
+    divorced: 'Divorced',
+    Widowed: 'Widowed',
+    widowed: 'Widowed',
+    male: 'Male',
+    female: 'Female',
+    any_religion: 'Any Religion',
+    approved: 'Approved',
+    pending: 'Pending',
+    rejected: 'Rejected',
+    deleted: 'Deleted',
+    draft: 'Draft'
+  };
+  if (map[value]) return map[value];
+  return String(value)
+    .replace(/_/g, ' ')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+};
+
+export const fullName = (profile) => {
+  const user = profile?.userId && typeof profile.userId === 'object' ? profile.userId : {};
+  return [
+    profile?.firstName || user.firstName,
+    profile?.lastName || user.lastName,
+    profile?.surname || user.surname
+  ].filter(Boolean).join(' ');
+};
+
+export const formatIncome = (income) => {
+  const n = Number(income);
+  if (!Number.isFinite(n) || n <= 0) return '';
+  const lacs = Math.round((n / 100000) * 10) / 10;
+  if (lacs <= 0) return '';
+  const amount = Number.isInteger(lacs) ? String(lacs) : String(lacs);
+  const unit = lacs === 1 ? 'lac' : 'lacs';
+  return `${amount} ${unit}`;
+};
+
 export const lookupIndianPincode = async (pin) => {
   if (!/^[0-9]{6}$/.test(pin)) return null;
   const res = await fetch(`https://api.postalpincode.in/pincode/${pin}`);

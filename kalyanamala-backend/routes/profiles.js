@@ -6,6 +6,8 @@ const { body, validationResult } = require('express-validator');
 
 const Profile = require('../models/Profile');
 const User = require('../models/User');
+const { defaultPassword } = require('../utils/defaultPassword');
+const { generateProfileId, buildProfileSearchFilter } = require('../utils/profileId');
 
 // ==========================================
 // AUTH MIDDLEWARE
@@ -285,29 +287,8 @@ const profileValidation = [
 ];
 
 // ==========================================
-// PROFILE ID GENERATOR
+// PROFILE ID GENERATOR (M00001, F00002, shared sequence)
 // ==========================================
-function generateProfilePrefix(gender) {
-  const now = new Date();
-  const yy = String(now.getFullYear()).slice(-2);
-  const mm = String(now.getMonth() + 1).padStart(2, '0');
-  const genderCode = gender === 'male' ? 'M' : 'F';
-  return `KM-${yy}${mm}${genderCode}`;
-}
-
-async function generateProfileId(gender) {
-  const prefix = generateProfilePrefix(gender);
-
-  const lastProfile = await Profile.findOne({ profileId: new RegExp(`^${prefix}`) })
-    .sort({ createdAt: -1 });
-
-  let sequence = 1;
-  if (lastProfile?.profileId) {
-    sequence = parseInt(lastProfile.profileId.slice(-5), 10) + 1;
-  }
-
-  return `${prefix}${String(sequence).padStart(5, '0')}`;
-}
 
 // ==========================================
 // CREATE PROFILE (self)
@@ -459,13 +440,7 @@ router.post(
         });
       }
 
-      // Temporary password the admin shares with the user
-      const namePart = safeString(firstName)
-        .replace(/[^a-zA-Z]/g, '')
-        .toUpperCase()
-        .slice(0, 4)
-        .padEnd(4, 'X');
-      const tempPassword = `KM-${namePart}-${String(phone).slice(-4)}`;
+      const tempPassword = defaultPassword(firstName, phone);
 
       const hashedPassword = await bcrypt.hash(
         tempPassword,
@@ -692,7 +667,14 @@ router.put('/me', authMiddleware, profileValidation, async (req, res) => {
 // ==========================================
 router.get('/', authMiddleware, requireRole('admin', 'subadmin'), async (req, res) => {
   try {
-    const profiles = await Profile.find()
+    const search = String(req.query.search || '').trim();
+    const status = String(req.query.status || '').trim();
+    const filter = await buildProfileSearchFilter(search, User);
+    if (status && status !== 'all') {
+      filter.approvalStatus = status;
+    }
+
+    const profiles = await Profile.find(filter)
       .populate('userId', 'email firstName lastName surname phone alternativePhone role status')
       .sort({ createdAt: -1 });
 

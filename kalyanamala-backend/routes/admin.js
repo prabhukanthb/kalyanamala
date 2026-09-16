@@ -5,6 +5,9 @@ const jwt = require('jsonwebtoken');
 
 const User = require('../models/User');
 const Profile = require('../models/Profile');
+const { PASSWORD_HINT, applyDefaultPassword } = require('../utils/defaultPassword');
+const { notifyTemporaryPassword } = require('../utils/notifyPassword');
+const { generateProfileId, buildProfileSearchFilter } = require('../utils/profileId');
 
 // ==========================================
 // AUTH MIDDLEWARE
@@ -170,13 +173,6 @@ const profileValidation = [
 // ==========================================
 // HELPERS
 // ==========================================
-function generateProfilePrefix(gender) {
-  const now = new Date();
-  const yy = String(now.getFullYear()).slice(-2);
-  const mm = String(now.getMonth() + 1).padStart(2, '0');
-  const genderCode = gender === 'male' ? 'M' : 'F';
-  return `KM-${yy}${mm}${genderCode}`;
-}
 
 function buildProfilePayload(bodyData, reqUserId, isAdminCreate = false) {
   const profilePayload = {
@@ -442,6 +438,41 @@ router.put('/users/:userId', authMiddleware, adminMiddleware, userIdValidation, 
   }
 });
 
+router.post('/users/:userId/reset-password', authMiddleware, adminMiddleware, userIdValidation, async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: errors.array().map((e) => e.msg)
+      });
+    }
+
+    const user = await User.findById(req.params.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const tempPassword = await applyDefaultPassword(user);
+    await user.save();
+    const deliveredVia = await notifyTemporaryPassword(user, tempPassword);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Password reset to the default format',
+      tempPassword,
+      passwordHint: PASSWORD_HINT,
+      deliveredVia
+    });
+  } catch (error) {
+    console.error('Admin reset password error:', error);
+    return res.status(500).json({
+      error: 'Failed to reset password',
+      message: error.message
+    });
+  }
+});
+
 // ==========================================
 // PROFILES LIST / SEARCH
 // ==========================================
@@ -465,18 +496,7 @@ router.get('/profiles', authMiddleware, adminMiddleware, listProfilesValidation,
     }
 
     if (search) {
-      query.$or = [
-        { profileId: { $regex: search, $options: 'i' } },
-        { 'userId.firstName': { $regex: search, $options: 'i' } },
-        { 'userId.lastName': { $regex: search, $options: 'i' } },
-        { 'userId.surname': { $regex: search, $options: 'i' } },
-        { 'userId.email': { $regex: search, $options: 'i' } },
-        { 'userId.phone': { $regex: search, $options: 'i' } },
-        { religion: { $regex: search, $options: 'i' } },
-        { occupation: { $regex: search, $options: 'i' } },
-        { 'currentAddress.city': { $regex: search, $options: 'i' } },
-        { 'currentAddress.state': { $regex: search, $options: 'i' } }
-      ];
+      Object.assign(query, await buildProfileSearchFilter(search, User));
     }
 
     const profiles = await Profile.find(query)
@@ -570,17 +590,7 @@ router.post('/profiles', authMiddleware, adminMiddleware, profileValidation, asy
       }
     }
 
-    const prefix = generateProfilePrefix(req.body.gender);
-    const lastProfile = await Profile.findOne({
-      profileId: new RegExp(`^${prefix}`)
-    }).sort({ profileId: -1 });
-
-    let sequence = 1;
-    if (lastProfile?.profileId) {
-      sequence = parseInt(lastProfile.profileId.slice(-5), 10) + 1;
-    }
-
-    const profileId = `${prefix}${String(sequence).padStart(5, '0')}`;
+    const profileId = await generateProfileId(req.body.gender);
 
     const profileData = buildProfilePayload(req.body, req.userId, true);
 

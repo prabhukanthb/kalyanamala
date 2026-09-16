@@ -1,5 +1,6 @@
 import React from 'react';
-import { formatHeight } from '../utils/profileFormHelpers';
+import { formatHeight, prettyLabel, fullName, formatIncome } from '../utils/profileFormHelpers';
+import ProfileDownloadCard from './ProfileDownloadCard';
 
 const API_BASE = 'https://kalyanamala-backend-production.up.railway.app';
 
@@ -25,7 +26,7 @@ const R = ({ label, value }) => (
 const H = ({ children }) => (
   <h4 style={{
     margin: '18px 0 8px', fontSize: 14, textTransform: 'uppercase', letterSpacing: 0.5,
-    color: '#2196F3', borderBottom: '1px solid #eee', paddingBottom: 6
+    color: '#8B1E3F', borderBottom: '1px solid #f0e4d0', paddingBottom: 6
   }}>{children}</h4>
 );
 
@@ -42,11 +43,14 @@ const digitsOnly = (value, max) => String(value || '').replace(/\D/g, '').slice(
 
 const ProfileViewModal = ({ profile, isAdmin, onClose }) => {
   const [active,setActive] = React.useState(0);
+  const [showDownload,setShowDownload] = React.useState(false);
 
   const [editing,setEditing] = React.useState(false);
   const [savingAcct,setSavingAcct] = React.useState(false);
   const [acctMsg,setAcctMsg] = React.useState('');
   const [acctOk,setAcctOk] = React.useState(false);
+  const [resetting,setResetting] = React.useState(false);
+  const [tempPassword,setTempPassword] = React.useState('');
 
   const [acct,setAcct] = React.useState({
     firstName: profile.userId?.firstName || '',
@@ -61,8 +65,8 @@ const ProfileViewModal = ({ profile, isAdmin, onClose }) => {
   const age = calcAge(profile.dateOfBirth);
 
   const name = editing || acctOk
-    ? `${acct.firstName} ${acct.lastName}`.trim()
-    : `${profile.firstName || profile.userId?.firstName || ''} ${profile.lastName || profile.userId?.lastName || ''}`.trim();
+    ? [acct.firstName, acct.lastName, acct.surname].filter(Boolean).join(' ')
+    : fullName(profile);
 
   const saveAccount = async () => {
     setSavingAcct(true);
@@ -99,6 +103,34 @@ const ProfileViewModal = ({ profile, isAdmin, onClose }) => {
     }
   };
 
+  const resetPassword = async () => {
+    setResetting(true);
+    setAcctMsg('');
+    setAcctOk(false);
+    setTempPassword('');
+    try {
+      const token = localStorage.getItem('token');
+      const userId = profile.userId?._id || profile.userId;
+      const res = await fetch(`${API_BASE}/api/admin/users/${userId}/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || data.error || 'Reset failed');
+      setTempPassword(data.tempPassword || '');
+      setAcctMsg(data.message || 'Password reset to the default format.');
+      setAcctOk(true);
+    } catch (e) {
+      setAcctMsg(e.message);
+      setAcctOk(false);
+    } finally {
+      setResetting(false);
+    }
+  };
+
   return (
     <div
       onClick={onClose}
@@ -109,21 +141,34 @@ const ProfileViewModal = ({ profile, isAdmin, onClose }) => {
         style={{ maxWidth: 900, margin: '0 auto', background: '#fff', borderRadius: 12, overflow: 'hidden' }}
       >
         <div style={{
-          background: 'linear-gradient(90deg,#2196F3,#21CBF3)', color: '#fff', padding: '16px 22px',
+          background: 'linear-gradient(90deg,#8B1E3F,#b43b4a)', color: '#fff', padding: '16px 22px',
           display: 'flex', justifyContent: 'space-between', alignItems: 'center'
         }}>
           <div>
             <h2 style={{ margin: 0, fontSize: 22 }}>{name || 'Member'}</h2>
             <div style={{ fontSize: 13, opacity: 0.95 }}>
+              {profile.profileId ? `${profile.profileId} · ` : ''}
               {age ? `${age} yrs` : ''}
               {formatHeight(profile.heightFeet, profile.heightInches) ? ` · ${formatHeight(profile.heightFeet, profile.heightInches)}` : ''}
               {profile.currentAddress?.city ? ` · ${profile.currentAddress.city}` : ''}
             </div>
           </div>
-          <button onClick={onClose} style={{
-            background: 'rgba(255,255,255,0.25)', border: 'none', color: '#fff',
-            width: 32, height: 32, borderRadius: '50%', cursor: 'pointer', fontSize: 18
-          }}>×</button>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <button
+              type="button"
+              onClick={() => setShowDownload(true)}
+              style={{
+                background: '#fff', color: '#8B1E3F', border: 'none',
+                padding: '8px 14px', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 13
+              }}
+            >
+              Download
+            </button>
+            <button onClick={onClose} style={{
+              background: 'rgba(255,255,255,0.25)', border: 'none', color: '#fff',
+              width: 32, height: 32, borderRadius: '50%', cursor: 'pointer', fontSize: 18
+            }}>×</button>
+          </div>
         </div>
 
         <div style={{ display: 'flex', gap: 24, padding: 22, flexWrap: 'wrap' }}>
@@ -169,7 +214,7 @@ const ProfileViewModal = ({ profile, isAdmin, onClose }) => {
                     <R label="Status" value={profile.approvalStatus} />
 
                     <button
-                      onClick={() => { setEditing(true); setAcctMsg(''); }}
+                      onClick={() => { setEditing(true); setAcctMsg(''); setTempPassword(''); }}
                       style={{
                         marginTop: 10, padding: '7px 14px', border: '1px solid #2196F3',
                         background: '#fff', color: '#2196F3', borderRadius: 5, cursor: 'pointer'
@@ -177,6 +222,25 @@ const ProfileViewModal = ({ profile, isAdmin, onClose }) => {
                     >
                       Edit account details
                     </button>
+                    <button
+                      onClick={resetPassword}
+                      disabled={resetting}
+                      style={{
+                        marginTop: 10, marginLeft: 8, padding: '7px 14px', border: '1px solid #c0392b',
+                        background: resetting ? '#999' : '#c0392b', color: '#fff', borderRadius: 5,
+                        cursor: resetting ? 'not-allowed' : 'pointer'
+                      }}
+                    >
+                      {resetting ? 'Resetting…' : 'Reset password'}
+                    </button>
+                    {tempPassword && (
+                      <div style={{ marginTop: 10, padding: 10, background: '#e6f7ea', borderRadius: 6, color: '#1b7a3d' }}>
+                        Temporary password: <strong>{tempPassword}</strong>
+                        <div style={{ fontSize: 12, marginTop: 4 }}>
+                          Format: first 4 letters of name + @ + last 4 digits of registered mobile. Share this with the user.
+                        </div>
+                      </div>
+                    )}
                   </>
                 ) : (
                   <div style={{ background: '#f5f9ff', padding: 14, borderRadius: 8, border: '1px solid #d6e6ff' }}>
@@ -238,11 +302,11 @@ const ProfileViewModal = ({ profile, isAdmin, onClose }) => {
             )}
 
             <H>Basic Details</H>
-            <R label="Gender" value={profile.gender || ''} />
+            <R label="Gender" value={prettyLabel(profile.gender)} />
             <R label="Date of Birth" value={profile.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString('en-GB') : ''} />
             <R label="Age" value={age ? `${age} years` : ''} />
             <R label="Height" value={formatHeight(profile.heightFeet, profile.heightInches)} />
-            <R label="Marital Status" value={profile.maritalStatus || ''} />
+            <R label="Marital Status" value={prettyLabel(profile.maritalStatus)} />
 
             <H>Religion &amp; Family</H>
             <R label="Religion" value={profile.religion || ''} />
@@ -264,7 +328,7 @@ const ProfileViewModal = ({ profile, isAdmin, onClose }) => {
             <R label="Occupation" value={profile.occupation || ''} />
             <R label="Company" value={profile.companyName || ''} />
             <R label="Job Location" value={profile.jobLocation || ''} />
-            <R label="Income" value={profile.income ? `${profile.incomeCurrency || 'INR'} ${profile.income}` : ''} />
+            <R label="Income" value={formatIncome(profile.income)} />
 
             <H>Current Address</H>
             <R label="Street" value={profile.currentAddress?.streetName || ''} />
@@ -282,11 +346,14 @@ const ProfileViewModal = ({ profile, isAdmin, onClose }) => {
 
             <H>About &amp; Preference</H>
             <p style={{ fontSize: 14, lineHeight: 1.6 }}>{profile.aboutMe || ''}</p>
-            <R label="Preferred Match" value={profile.preferredMatch || ''} />
+            <R label="Preferred Match" value={prettyLabel(profile.preferredMatch)} />
             <R label="Partner Requirement" value={profile.partnerRequirement || ''} />
           </div>
         </div>
       </div>
+      {showDownload && (
+        <ProfileDownloadCard profile={profile} onClose={() => setShowDownload(false)} />
+      )}
     </div>
   );
 };

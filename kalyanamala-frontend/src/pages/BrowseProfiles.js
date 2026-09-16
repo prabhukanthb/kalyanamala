@@ -3,6 +3,7 @@ import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import ProfileDownloadCard from '../components/ProfileDownloadCard';
 import ProfileViewModal from '../components/ProfileViewModal';
+import { fullName } from '../utils/profileFormHelpers';
 
 const API_BASE = 'https://kalyanamala-backend-production.up.railway.app';
 
@@ -23,10 +24,10 @@ const primaryPhoto = (list) => {
   return photoSrc(primary || arr[0]);
 };
 
-const box = { border: '1px solid #e0e0e0', borderRadius: 10, background: '#fff', padding: 16, marginBottom: 16 };
-const input = { padding: '9px 12px', border: '1px solid #ccc', borderRadius: 6, boxSizing: 'border-box' };
-const btn = { padding: '9px 18px', background: '#2196F3', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' };
-const ghostBtn = { ...btn, background: '#fff', color: '#2196F3', border: '1px solid #2196F3' };
+const box = { border: '1px solid #efe0cc', borderRadius: 14, background: '#fff', padding: 16, marginBottom: 16, boxShadow: '0 8px 24px rgba(92,16,40,0.05)' };
+const input = { padding: '9px 12px', border: '1px solid #e4d2bc', borderRadius: 8, boxSizing: 'border-box' };
+const btn = { padding: '9px 18px', background: '#8B1E3F', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 700 };
+const ghostBtn = { ...btn, background: '#fff', color: '#8B1E3F', border: '1px solid #C9A227' };
 
 const BrowseProfiles = () => {
   const { token, user, loading: authLoading } = useContext(AuthContext);
@@ -97,18 +98,17 @@ const BrowseProfiles = () => {
         const id = String(p.profileId || '');
         return id.toLowerCase().includes(q);
       }
-      const name = `${p.firstName || p.userId?.firstName || ''} ${p.lastName || p.userId?.lastName || ''}`.toLowerCase();
-      const email = String(p.userId?.email || '').toLowerCase();
-      const phone = String(p.userId?.phone || '');
-      return name.includes(q) || (isAdmin && (email.includes(q) || phone.includes(q)));
+      const name = `${p.firstName || p.userId?.firstName || ''} ${p.lastName || p.userId?.lastName || ''} ${p.userId?.surname || ''}`.toLowerCase();
+      return name.includes(q);
     });
-  }, [visible,query,searchBy,isAdmin]);
+  }, [visible, query, searchBy]);
 
   if (authLoading || busy) return <div style={{ padding: 40 }}>Loading profiles…</div>;
 
   return (
-    <div style={{ maxWidth: 1100, margin: '30px auto', padding: 20 }}>
-      <h2>Browse Profiles</h2>
+    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 20px 48px' }}>
+      <div style={{ marginBottom: 8, fontSize: 13, letterSpacing: 1.4, textTransform: 'uppercase', color: '#C9A227' }}>Kalyanamala</div>
+      <h2 style={{ fontFamily: 'Georgia, serif', fontSize: 32, color: '#8B1E3F', margin: '0 0 8px' }}>Browse profiles</h2>
 
       {error && (
         <div style={{ color: 'red', padding: 10, background: '#ffebee', borderRadius: 6, marginBottom: 15 }}>
@@ -127,13 +127,13 @@ const BrowseProfiles = () => {
       <div style={{ ...box, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
         {isAdmin && (
           <select value={searchBy} onChange={(e) => setSearchBy(e.target.value)} style={input}>
-            <option value="name">Search by Name / Email / Phone</option>
+            <option value="name">Search by Name</option>
             <option value="id">Search by Profile ID</option>
           </select>
         )}
         <input
           style={{ ...input, flex: 1, minWidth: 220 }}
-          placeholder={searchBy === 'id' ? 'Profile ID (or last 6 digits)' : 'Name'}
+          placeholder={searchBy === 'id' ? 'Profile ID (M00001)' : 'Name'}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
@@ -145,10 +145,10 @@ const BrowseProfiles = () => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
         {filtered.map((p) => {
           const img = primaryPhoto(p.photos);
-          const name = `${p.firstName || p.userId?.firstName || ''} ${p.lastName || p.userId?.lastName || ''}`.trim();
+          const name = fullName(p);
 
           return (
-            <div key={p._id || p.profileId} style={{ ...box, padding: 0, overflow: 'hidden' }}>
+            <div key={p._id || p.profileId} style={{ ...box, padding: 0, overflow: 'hidden', marginBottom: 0 }}>
               {img ? (
                 <img
                   src={img}
@@ -160,8 +160,8 @@ const BrowseProfiles = () => {
                 <div
                   onClick={() => setViewing(p)}
                   style={{
-                    height: 220, background: '#f2f2f2', display: 'flex', alignItems: 'center',
-                    justifyContent: 'center', color: '#aaa', cursor: 'pointer'
+                    height: 220, background: '#f6eee4', display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', color: '#b89', cursor: 'pointer'
                   }}
                 >
                   No photo
@@ -169,18 +169,21 @@ const BrowseProfiles = () => {
               )}
 
               <div style={{ padding: 14 }}>
-                <div style={{ fontWeight: 600, fontSize: 16 }}>{name || 'Member'}</div>
+                <div style={{ fontFamily: 'Georgia, serif', fontWeight: 700, fontSize: 18, color: '#8B1E3F' }}>{name || 'Member'}</div>
 
-                <div style={{ fontSize: 13, color: '#666', marginTop: 4 }}>
+                <div style={{ fontSize: 13, color: '#6B5348', marginTop: 4 }}>
                   {calcAge(p.dateOfBirth)} yrs · {p.heightFeet}′{p.heightInches || 0}″
                 </div>
 
-                <div style={{ fontSize: 13, color: '#666' }}>
-                  {p.occupation} · {p.currentAddress?.city}
+                <div style={{ fontSize: 13, color: '#6B5348' }}>
+                  {[p.occupation, p.currentAddress?.city].filter(Boolean).join(' · ')}
                 </div>
 
-                <div style={{ fontSize: 12, color: '#999', marginTop: 6 }}>
-                  ID: {String(p.profileId || '').slice(-6)}
+                <div style={{
+                  display: 'inline-block', marginTop: 8, fontSize: 12, fontWeight: 700,
+                  background: '#f8eadc', color: '#8B1E3F', padding: '3px 8px', borderRadius: 6
+                }}>
+                  {p.profileId || '-'}
                 </div>
 
                 {isAdmin && (

@@ -6,6 +6,13 @@ const { body, validationResult } = require('express-validator');
 
 const User = require('../models/User');
 const Profile = require('../models/Profile');
+const {
+  PASSWORD_HINT,
+  applyDefaultPassword,
+  findUserByEmailOrPhone,
+  publicUser
+} = require('../utils/defaultPassword');
+const { notifyTemporaryPassword } = require('../utils/notifyPassword');
 
 // =========================
 // AUTH MIDDLEWARE
@@ -49,6 +56,7 @@ const authMiddleware = (req, res, next) => {
 const registerValidation = [
   body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
   body('phone').matches(/^[0-9]{10}$/).withMessage('Phone must be 10 digits'),
+  body('alternativePhone').optional({ checkFalsy: true }).matches(/^[0-9]{10}$/).withMessage('Alternative phone must be 10 digits'),
   body('firstName').trim().notEmpty().isLength({ min: 2 }).withMessage('First name must be at least 2 characters'),
   body('lastName').trim().notEmpty().isLength({ min: 2 }).withMessage('Last name must be at least 2 characters'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
@@ -76,6 +84,7 @@ router.post('/register', registerValidation, async (req, res) => {
     const {
       email,
       phone,
+      alternativePhone,
       firstName,
       lastName,
       password,
@@ -103,6 +112,7 @@ router.post('/register', registerValidation, async (req, res) => {
     const user = await User.create({
       email,
       phone,
+      alternativePhone: alternativePhone ? String(alternativePhone).trim() : null,
       firstName,
       lastName,
       password: hashedPassword,
@@ -121,14 +131,7 @@ router.post('/register', registerValidation, async (req, res) => {
       success: true,
       message: 'Registration successful',
       token,
-      user: {
-        id: user._id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        phone: user.phone,
-        role: user.role
-      }
+      user: publicUser(user)
     });
   } catch (error) {
     console.error('Registration error:', error);
@@ -198,14 +201,7 @@ router.post('/login', loginValidation, async (req, res) => {
       success: true,
       message: 'Login successful',
       token,
-      user: {
-        id: user._id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        phone: user.phone,
-        role: user.role
-      }
+      user: publicUser(user)
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -241,7 +237,7 @@ router.get('/me', authMiddleware, async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      user
+      user: publicUser(user)
     });
   } catch (error) {
     return res.status(500).json({
@@ -250,6 +246,48 @@ router.get('/me', authMiddleware, async (req, res) => {
     });
   }
 });
+
+// =========================
+// UPDATE ACCOUNT (alt mobile)
+// =========================
+router.put(
+  '/account',
+  authMiddleware,
+  body('alternativePhone').optional({ checkFalsy: true }).matches(/^[0-9]{10}$/).withMessage('Alternative phone must be 10 digits'),
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          error: 'Validation failed',
+          details: errors.array().map((e) => e.msg)
+        });
+      }
+
+      const user = await User.findById(req.userId);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      if (req.body.alternativePhone !== undefined) {
+        user.alternativePhone = req.body.alternativePhone || null;
+      }
+
+      await user.save();
+
+      return res.status(200).json({
+        success: true,
+        message: 'Account updated',
+        user: publicUser(user)
+      });
+    } catch (error) {
+      return res.status(500).json({
+        error: 'Failed to update account',
+        message: error.message
+      });
+    }
+  }
+);
 
 // =========================
 // CHANGE PASSWORD
@@ -309,12 +347,13 @@ router.put(
 );
 
 // =========================
-// RESET PASSWORD (admin-triggered)
+// FORGOT PASSWORD
+// Identity must match registered email or mobile. Password becomes
+// first 4 letters of name + @ + last 4 digits of registered mobile.
 // =========================
 router.post(
-  '/reset-password',
-  authMiddleware,
-  body('emailOrPhone').notEmpty().withMessage('Email or phone is required'),
+  '/forgot-password',
+  body('emailOrPhone').notEmpty().withMessage('Registered email or mobile number is required'),
   async (req, res) => {
     try {
       const errors = validationResult(req);
@@ -325,34 +364,79 @@ router.post(
         });
       }
 
-      const { emailOrPhone } = req.body;
-
-      const user = await User.findOne({
-        $or: [{email:emailOrPhone},{phone:emailOrPhone}]
-      });
-
+      const user = await findUserByEmailOrPhone(User, req.body.emailOrPhone);
       if (!user) {
         return res.status(404).json({
-          error: 'User not found',
-          message: 'No user found with that email or phone'
+          error: 'No match',
+          message: 'No account found with that registered email or mobile number. Contact admin if you need help.'
         });
       }
 
-      // Simple reset format: KM-FIRST-LAST4
-      const firstNamePart = (user.firstName || 'USER').replace(/[^a-zA-Z]/g, '').toUpperCase().slice(0, 4).padEnd(4, 'X');
-      const last4Phone = (user.phone || '').slice(-4);
-      const newPassword = `KM-${firstNamePart}-${last4Phone}`;
-
-      user.password = await bcrypt.hash(
-        newPassword,
-        parseInt(process.env.BCRYPT_ROUNDS || '10', 10)
-      );
-      user.passwordResetRequired = true;
+      const tempPassword = await applyDefaultPassword(user);
       await user.save();
+
+      const deliveredVia = await notifyTemporaryPassword(user, tempPassword);
+      const deliveryNote = deliveredVia.length
+        ? `A temporary password was sent to your registered ${deliveredVia.join(' and ')}.`
+        : 'Email/SMS is not configured, so use the default password format below or contact admin.';
 
       return res.status(200).json({
         success: true,
-        message: 'Password reset successfully'
+        message: `Your password was reset. ${deliveryNote}`,
+        passwordHint: PASSWORD_HINT,
+        deliveredVia
+      });
+    } catch (error) {
+      return res.status(500).json({
+        error: 'Password reset failed',
+        message: error.message
+      });
+    }
+  }
+);
+
+// =========================
+// RESET PASSWORD (logged-in admin fallback)
+// =========================
+router.post(
+  '/reset-password',
+  authMiddleware,
+  body('emailOrPhone').notEmpty().withMessage('Email or phone is required'),
+  async (req, res) => {
+    try {
+      if (req.userRole !== 'admin' && req.userRole !== 'subadmin') {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'Admin access required'
+        });
+      }
+
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          error: 'Validation failed',
+          details: errors.array().map((e) => e.msg)
+        });
+      }
+
+      const user = await findUserByEmailOrPhone(User, req.body.emailOrPhone);
+      if (!user) {
+        return res.status(404).json({
+          error: 'User not found',
+          message: 'No user found with that registered email or mobile number'
+        });
+      }
+
+      const tempPassword = await applyDefaultPassword(user);
+      await user.save();
+      const deliveredVia = await notifyTemporaryPassword(user, tempPassword);
+
+      return res.status(200).json({
+        success: true,
+        message: 'Password reset successfully',
+        tempPassword,
+        passwordHint: PASSWORD_HINT,
+        deliveredVia
       });
     } catch (error) {
       return res.status(500).json({

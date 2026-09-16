@@ -13,6 +13,8 @@ import { AuthProvider, AuthContext } from './context/AuthContext';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
+import ChangePassword from './pages/ChangePassword';
 import Profile from './pages/Profile';
 import AdminDashboard from './pages/AdminDashboard';
 import CreateProfile from './pages/admin/CreateProfile';
@@ -31,12 +33,13 @@ const NavBar = () => {
   return (
     <nav
       style={{
-        backgroundColor: '#333',
+        background: '#5C1028',
         color: 'white',
-        padding: '15px 20px',
+        padding: '14px 22px',
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        gap: 12
       }}
     >
       <Link
@@ -44,11 +47,14 @@ const NavBar = () => {
         style={{
           color: 'white',
           textDecoration: 'none',
-          fontSize: '20px',
-          fontWeight: 'bold'
+          fontSize: '22px',
+          fontWeight: 'bold',
+          fontFamily: 'Georgia, serif',
+          letterSpacing: 0.4
         }}
       >
-        💍 Kalyanamala
+        <span style={{ color: '#C9A227', marginRight: 8 }}>💍</span>
+        Kalyanamala
       </Link>
 
       <div>
@@ -73,6 +79,13 @@ const NavBar = () => {
               Profile
             </Link>
 
+            <Link
+              to="/change-password"
+              style={{ color: 'white', marginRight: '15px', textDecoration: 'none' }}
+            >
+              Password
+            </Link>
+
             {(user?.role === 'admin' || user?.role === 'subadmin') && (
               <Link
                 to="/admin"
@@ -86,11 +99,12 @@ const NavBar = () => {
               onClick={handleLogout}
               style={{
                 padding: '8px 15px',
-                backgroundColor: '#ff6b6b',
-                color: 'white',
+                backgroundColor: '#C9A227',
+                color: '#5C1028',
                 border: 'none',
                 cursor: 'pointer',
-                borderRadius: '5px'
+                borderRadius: '8px',
+                fontWeight: 700
               }}
             >
               Logout
@@ -125,11 +139,17 @@ function AppContent() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
   <Route path="/browse" element={<BrowseProfiles />} />
 
         <Route
           path="/profile"
           element={isAuthenticated ? <Profile /> : <Navigate to="/login" replace />}
+        />
+
+        <Route
+          path="/change-password"
+          element={isAuthenticated ? <ChangePassword /> : <Navigate to="/login" replace />}
         />
 
         <Route

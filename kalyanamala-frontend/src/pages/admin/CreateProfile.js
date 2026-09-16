@@ -367,6 +367,7 @@ const CreateProfile = () => {
           <p><strong>Login (phone):</strong> {createdInfo.phone}</p>
           <p><strong>Temporary password:</strong> {createdInfo.tempPassword}</p>
           <p style={{ color: '#555' }}>
+            Default format is the first 4 letters of the name, then @, then the last 4 digits of the registered mobile.
             Share these details with the user. They should change the password after first login.
           </p>
           <button type="button" onClick={() => navigate('/admin')} style={buttonStyle}>

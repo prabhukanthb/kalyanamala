@@ -24,6 +24,10 @@ export const authService = {
   login: (data) => apiClient.post('/auth/login', data),
   logout: () => apiClient.post('/auth/logout'),
   getCurrentUser: () => apiClient.get('/auth/me'),
+  updateAccount: (data) => apiClient.put('/auth/account', data),
+  changePassword: (data) => apiClient.put('/auth/change-password', data),
+  forgotPassword: (data) => apiClient.post('/auth/forgot-password', data),
+  adminResetPassword: (userId) => apiClient.post(`/admin/users/${userId}/reset-password`)
 };
 
 export const profileService = {

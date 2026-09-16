@@ -5,6 +5,8 @@ const jwt = require('jsonwebtoken');
 
 const User = require('../models/User');
 const Profile = require('../models/Profile');
+const { PASSWORD_HINT, applyDefaultPassword } = require('../utils/defaultPassword');
+const { notifyTemporaryPassword } = require('../utils/notifyPassword');
 
 // ==========================================
 // AUTH MIDDLEWARE
@@ -437,6 +439,41 @@ router.put('/users/:userId', authMiddleware, adminMiddleware, userIdValidation, 
     console.error('Update user error:', error);
     return res.status(500).json({
       error: 'Failed to update user',
+      message: error.message
+    });
+  }
+});
+
+router.post('/users/:userId/reset-password', authMiddleware, adminMiddleware, userIdValidation, async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: errors.array().map((e) => e.msg)
+      });
+    }
+
+    const user = await User.findById(req.params.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const tempPassword = await applyDefaultPassword(user);
+    await user.save();
+    const deliveredVia = await notifyTemporaryPassword(user, tempPassword);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Password reset to the default format',
+      tempPassword,
+      passwordHint: PASSWORD_HINT,
+      deliveredVia
+    });
+  } catch (error) {
+    console.error('Admin reset password error:', error);
+    return res.status(500).json({
+      error: 'Failed to reset password',
       message: error.message
     });
   }

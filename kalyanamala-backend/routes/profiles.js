@@ -668,7 +668,11 @@ router.put('/me', authMiddleware, profileValidation, async (req, res) => {
 router.get('/', authMiddleware, requireRole('admin', 'subadmin'), async (req, res) => {
   try {
     const search = String(req.query.search || '').trim();
+    const status = String(req.query.status || '').trim();
     const filter = await buildProfileSearchFilter(search, User);
+    if (status && status !== 'all') {
+      filter.approvalStatus = status;
+    }
 
     const profiles = await Profile.find(filter)
       .populate('userId', 'email firstName lastName surname phone alternativePhone role status')

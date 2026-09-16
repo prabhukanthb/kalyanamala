@@ -2,35 +2,64 @@ import React, { useCallback, useContext, useEffect, useMemo, useState } from 're
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import ProfileViewModal from '../components/ProfileViewModal';
 
 const API_BASE = 'https://kalyanamala-backend-production.up.railway.app';
+
+const prettyLabel = (value) => {
+  if (!value) return '-';
+  return String(value).replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+};
+
+const STATUS_FILTERS = ['all', 'pending', 'approved', 'rejected', 'deleted'];
+
+const statusTone = (status) => {
+  switch (status) {
+    case 'approved': return { bg: '#e6f7ea', fg: '#1b7a3d', label: 'Approved' };
+    case 'pending': return { bg: '#fff6e6', fg: '#8a5a00', label: 'Pending' };
+    case 'rejected': return { bg: '#ffebee', fg: '#c0392b', label: 'Rejected' };
+    case 'deleted': return { bg: '#f0f0f0', fg: '#666', label: 'Deleted' };
+    case 'draft': return { bg: '#eef6ff', fg: '#1565c0', label: 'Draft' };
+    default: return { bg: '#eef2f6', fg: '#445', label: status || '-' };
+  }
+};
 
 const AdminDashboard = () => {
   const { token, user } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const [profiles,setProfiles] = useState([]);
+  const [stats,setStats] = useState(null);
   const [loading,setLoading] = useState(true);
   const [error,setError] = useState('');
   const [search,setSearch] = useState('');
+  const [status,setStatus] = useState('all');
+  const [viewing,setViewing] = useState(null);
+  const [rejecting,setRejecting] = useState(null);
+  const [rejectReason,setRejectReason] = useState('');
 
   const headers = useMemo(
-    () => ({
-      Authorization: `Bearer ${token}`
-    }),
+    () => ({ Authorization: `Bearer ${token}` }),
     [token]
   );
 
-  const loadProfiles = useCallback(async (term = '') => {
+  const loadStats = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/api/admin/dashboard/stats`, { headers });
+      setStats(res.data.stats || null);
+    } catch (err) {
+      setStats(null);
+    }
+  }, [headers]);
+
+  const loadProfiles = useCallback(async (term = '', statusFilter = 'all') => {
     try {
       setLoading(true);
       setError('');
-
-      const res = await axios.get(`${API_BASE}/api/profiles`, {
-        headers,
-        params: String(term).trim() ? { search: String(term).trim() } : undefined
-      });
-
+      const params = {};
+      if (String(term).trim()) params.search = String(term).trim();
+      if (statusFilter && statusFilter !== 'all') params.status = statusFilter;
+      const res = await axios.get(`${API_BASE}/api/profiles`, { headers, params });
       setProfiles(res.data.profiles || []);
     } catch (err) {
       setError(
@@ -48,198 +77,205 @@ const AdminDashboard = () => {
       navigate('/login');
       return;
     }
-
     if (user?.role !== 'admin' && user?.role !== 'subadmin') {
       navigate('/');
       return;
     }
-
-    loadProfiles();
-  }, [token,user,navigate,loadProfiles]);
+    loadStats();
+    loadProfiles('', 'all');
+  }, [token, user, navigate, loadStats, loadProfiles]);
 
   const handleApprove = async (profileId) => {
     try {
       await axios.put(`${API_BASE}/api/profiles/${profileId}/approve`, {}, { headers });
-      loadProfiles();
+      loadProfiles(search, status);
+      loadStats();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to approve profile');
     }
   };
 
-  const handleReject = async (profileId) => {
-    const rejectedReason = prompt('Enter rejection reason:');
-    if (!rejectedReason) return;
-
+  const submitReject = async () => {
+    if (!rejecting || !rejectReason.trim()) return;
     try {
       await axios.put(
-        `${API_BASE}/api/profiles/${profileId}/reject`,
-        { rejectedReason },
+        `${API_BASE}/api/profiles/${rejecting._id}/reject`,
+        { rejectedReason: rejectReason.trim() },
         { headers }
       );
-      loadProfiles();
+      setRejecting(null);
+      setRejectReason('');
+      loadProfiles(search, status);
+      loadStats();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to reject profile');
     }
   };
 
-  const handleDelete = async (profileId) => {
-    const confirmDelete = window.confirm('Are you sure you want to delete this profile?');
-    if (!confirmDelete) return;
-
+  const handleDelete = async (profile) => {
+    const idLabel = profile.profileId || profile._id;
+    if (!window.confirm(`Delete profile ${idLabel}? This ID will not be reused.`)) return;
     try {
-      await axios.delete(`${API_BASE}/api/profiles/${profileId}`, { headers });
-      loadProfiles();
+      await axios.delete(`${API_BASE}/api/profiles/${profile._id}`, { headers });
+      loadProfiles(search, status);
+      loadStats();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to delete profile');
     }
   };
 
-  if (loading) {
-    return <div style={{ padding: '30px' }}>Loading admin dashboard...</div>;
-  }
+  const counts = {
+    total: stats?.totalProfiles ?? profiles.length,
+    pending: stats?.pendingProfiles ?? profiles.filter((p) => p.approvalStatus === 'pending').length,
+    approved: stats?.approvedProfiles ?? profiles.filter((p) => p.approvalStatus === 'approved').length,
+    rejected: stats?.rejectedProfiles ?? profiles.filter((p) => p.approvalStatus === 'rejected').length,
+    deleted: stats?.deletedProfiles ?? profiles.filter((p) => p.approvalStatus === 'deleted').length
+  };
+
+  const applyStatus = (next) => {
+    setStatus(next);
+    loadProfiles(search, next);
+  };
+
+  const signedInAs = [user?.firstName, user?.lastName, user?.surname].filter(Boolean).join(' ');
 
   return (
-    <div style={{ maxWidth: '1300px', margin: '30px auto', padding: '20px' }}>
-      <h2>Admin Dashboard</h2>
-
-      {error && (
-        <div
-          style={{
-            background: '#ffebee',
-            color: 'red',
-            padding: '10px',
-            marginBottom: '20px',
-            borderRadius: '6px'
-          }}
-        >
-          {error}
+    <div style={page}>
+      <style>{`
+        .admin-row:hover td { background: #f5faff; }
+        .admin-stat:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(16,40,80,0.1); }
+      `}</style>
+      <div style={hero}>
+        <div>
+          <div style={{ fontSize: 13, opacity: 0.9, letterSpacing: 0.6, textTransform: 'uppercase' }}>Kalyanamala</div>
+          <h1 style={{ margin: '6px 0 0', fontSize: 28 }}>Admin Dashboard</h1>
+          <div style={{ marginTop: 6, opacity: 0.95 }}>
+            {signedInAs ? `Signed in as ${signedInAs}` : 'Manage profiles, IDs, and approvals'}
+          </div>
         </div>
-      )}
-
-      <div style={{ marginBottom: '20px', display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-        <button
-          onClick={() => navigate('/admin/profiles/create')}
-          style={{
-            padding: '10px 16px',
-            cursor: 'pointer'
-          }}
-        >
-          Create New Profile
+        <button onClick={() => navigate('/admin/profiles/create')} style={primaryBtn}>
+          + Create profile
         </button>
-
-        <button
-          onClick={() => loadProfiles(search)}
-          style={{
-            padding: '10px 16px',
-            cursor: 'pointer'
-          }}
-        >
-          Refresh Profiles
-        </button>
-
-        <form
-          onSubmit={(e) => { e.preventDefault(); loadProfiles(search); }}
-          style={{ display: 'flex', gap: 8, flex: 1, minWidth: 280 }}
-        >
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name or profile ID (M00001)"
-            style={{ flex: 1, padding: '10px 12px', border: '1px solid #ccc', borderRadius: 6 }}
-          />
-          <button type="submit" style={{ padding: '10px 16px', cursor: 'pointer' }}>Search</button>
-          {search && (
-            <button
-              type="button"
-              onClick={() => { setSearch(''); loadProfiles(''); }}
-              style={{ padding: '10px 16px', cursor: 'pointer' }}
-            >
-              Clear
-            </button>
-          )}
-        </form>
       </div>
 
-      <section
-        style={{
-          border: '1px solid #ddd',
-          padding: '16px',
-          borderRadius: '8px',
-          background: '#fff'
-        }}
-      >
-        <h3>Profiles ({profiles.length})</h3>
+      <div style={statGrid}>
+        <StatCard label="Total profiles" value={counts.total} color="#2196F3" active={status === 'all'} onClick={() => applyStatus('all')} />
+        <StatCard label="Pending" value={counts.pending} color="#e6a100" active={status === 'pending'} onClick={() => applyStatus('pending')} />
+        <StatCard label="Approved" value={counts.approved} color="#2e9e57" active={status === 'approved'} onClick={() => applyStatus('approved')} />
+        <StatCard label="Rejected" value={counts.rejected} color="#c0392b" active={status === 'rejected'} onClick={() => applyStatus('rejected')} />
+        <StatCard label="Deleted" value={counts.deleted} color="#667" active={status === 'deleted'} onClick={() => applyStatus('deleted')} />
+      </div>
+
+      {error && <div style={errorBox}>{error}</div>}
+
+      <section style={card}>
+        <div style={toolbar}>
+          <form
+            onSubmit={(e) => { e.preventDefault(); loadProfiles(search, status); }}
+            style={{ display: 'flex', gap: 8, flex: 1, minWidth: 260, flexWrap: 'wrap' }}
+          >
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by name or profile ID (M00001)"
+              style={searchInput}
+            />
+            <button type="submit" style={ghostBtn}>Search</button>
+            {search && (
+              <button type="button" onClick={() => { setSearch(''); loadProfiles('', status); }} style={ghostBtn}>
+                Clear
+              </button>
+            )}
+          </form>
+          <button type="button" onClick={() => { loadProfiles(search, status); loadStats(); }} style={ghostBtn}>
+            Refresh
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12, alignItems: 'center' }}>
+          {STATUS_FILTERS.map((item) => (
+            <button
+              key={item}
+              type="button"
+              onClick={() => applyStatus(item)}
+              style={chip(status === item)}
+            >
+              {item === 'all' ? 'All' : item[0].toUpperCase() + item.slice(1)}
+              <span style={chipCount}>{item === 'all' ? counts.total : counts[item]}</span>
+            </button>
+          ))}
+          <div style={{ marginLeft: 'auto', fontSize: 13, color: '#667' }}>
+            {loading ? 'Loading…' : `${profiles.length} shown`}
+          </div>
+        </div>
 
         <div style={{ overflowX: 'auto' }}>
-          <table
-            width="100%"
-            border="1"
-            cellPadding="8"
-            style={{ borderCollapse: 'collapse', minWidth: '1100px' }}
-          >
+          <table style={table}>
             <thead>
               <tr>
-                <th>Profile ID</th>
-                <th>Name</th>
-                <th>Gender</th>
-                <th>Religion</th>
-                <th>Marital Status</th>
-                <th>Status</th>
-                <th>Show in Search</th>
-                <th>Completion %</th>
-                <th>Actions</th>
+                <th style={th}>Profile ID</th>
+                <th style={th}>Name</th>
+                <th style={th}>Gender</th>
+                <th style={th}>Religion</th>
+                <th style={th}>Marital status</th>
+                <th style={th}>Status</th>
+                <th style={th}>In search</th>
+                <th style={th}>Completion</th>
+                <th style={th}>Actions</th>
               </tr>
             </thead>
-
             <tbody>
-              {profiles.length > 0 ? (
-                profiles.map((p) => (
-                  <tr key={p._id}>
-                    <td>{p.profileId || '-'}</td>
-                    <td>
-                      {(p.userId?.firstName || '') + ' ' + (p.userId?.lastName || '')}
-                    </td>
-                    <td>{p.gender || '-'}</td>
-                    <td>{p.religion || '-'}</td>
-                    <td>{p.maritalStatus || '-'}</td>
-                    <td>{p.approvalStatus || '-'}</td>
-                    <td>{p.showInSearch ? 'Yes' : 'No'}</td>
-                    <td>{p.profileCompletion ?? '-'}</td>
-                    <td>
-                      <button
-                        onClick={() => navigate(`/admin/profiles/${p._id}/edit`)}
-                        style={{ marginRight: '8px', cursor: 'pointer' }}
-                      >
-                        Edit
-                      </button>
-
-                      <button
-                        onClick={() => handleApprove(p._id)}
-                        style={{ marginRight: '8px', cursor: 'pointer' }}
-                      >
-                        Approve
-                      </button>
-
-                      <button
-                        onClick={() => handleReject(p._id)}
-                        style={{ marginRight: '8px', cursor: 'pointer' }}
-                      >
-                        Reject
-                      </button>
-
-                      <button
-                        onClick={() => handleDelete(p._id)}
-                        style={{ cursor: 'pointer' }}
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))
+              {loading ? (
+                <tr>
+                  <td colSpan="9" style={emptyCell}>Loading profiles…</td>
+                </tr>
+              ) : profiles.length ? (
+                profiles.map((p) => {
+                  const tone = statusTone(p.approvalStatus);
+                  const name = [p.userId?.firstName, p.userId?.lastName, p.userId?.surname].filter(Boolean).join(' ') || '-';
+                  const pct = Number(p.profileCompletion || 0);
+                  return (
+                    <tr key={p._id} className="admin-row" style={tr}>
+                      <td style={td}>
+                        <span style={idBadge}>{p.profileId || '-'}</span>
+                      </td>
+                      <td style={{ ...td, fontWeight: 600 }}>{name}</td>
+                      <td style={td}>{prettyLabel(p.gender)}</td>
+                      <td style={td}>{p.religion || '-'}</td>
+                      <td style={td}>{prettyLabel(p.maritalStatus)}</td>
+                      <td style={td}>
+                        <span style={{ ...pill, background: tone.bg, color: tone.fg }}>{tone.label}</span>
+                      </td>
+                      <td style={td}>{p.showInSearch ? 'Yes' : 'No'}</td>
+                      <td style={td}>
+                        <div style={barTrack}>
+                          <div style={{ ...barFill, width: `${Math.min(100, pct)}%` }} />
+                        </div>
+                        <div style={{ fontSize: 11, color: '#667', marginTop: 4 }}>{pct}%</div>
+                      </td>
+                      <td style={td}>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                          <button type="button" onClick={() => setViewing(p)} style={smallBtn('#2196F3')}>View</button>
+                          <button type="button" onClick={() => navigate(`/admin/profiles/${p._id}/edit`)} style={smallBtn('#0d7377')}>Edit</button>
+                          {p.approvalStatus !== 'approved' && p.approvalStatus !== 'deleted' && (
+                            <button type="button" onClick={() => handleApprove(p._id)} style={smallBtn('#2e9e57')}>Approve</button>
+                          )}
+                          {p.approvalStatus !== 'rejected' && p.approvalStatus !== 'deleted' && (
+                            <button type="button" onClick={() => { setRejecting(p); setRejectReason(''); }} style={smallBtn('#c0392b')}>Reject</button>
+                          )}
+                          {p.approvalStatus !== 'deleted' && (
+                            <button type="button" onClick={() => handleDelete(p)} style={smallBtn('#555')}>Delete</button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               ) : (
                 <tr>
-                  <td colSpan="9" style={{ textAlign: 'center', padding: '20px' }}>
-                    No profiles found.
+                  <td colSpan="9" style={emptyCell}>
+                    <div style={{ fontWeight: 600, color: '#334', marginBottom: 6 }}>No profiles match this search</div>
+                    <div>Try another name, profile ID such as M00001, or a different status.</div>
                   </td>
                 </tr>
               )}
@@ -247,8 +283,84 @@ const AdminDashboard = () => {
           </table>
         </div>
       </section>
+
+      {viewing && (
+        <ProfileViewModal profile={viewing} isAdmin onClose={() => setViewing(null)} />
+      )}
+
+      {rejecting && (
+        <div style={modalWrap} onClick={() => setRejecting(null)}>
+          <div style={modal} onClick={(e) => e.stopPropagation()}>
+            <h3 style={{ marginTop: 0 }}>Reject {rejecting.profileId || 'profile'}</h3>
+            <p style={{ color: '#556' }}>Enter a reason. The member will see this on review.</p>
+            <textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              rows={4}
+              style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #ccc', boxSizing: 'border-box' }}
+            />
+            <div style={{ marginTop: 14, display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button type="button" onClick={() => setRejecting(null)} style={ghostBtn}>Cancel</button>
+              <button type="button" onClick={submitReject} disabled={!rejectReason.trim()} style={{ ...primaryBtn, background: '#c0392b', color: '#fff' }}>
+                Reject profile
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
+const StatCard = ({ label, value, color, active, onClick }) => (
+  <button type="button" className="admin-stat" onClick={onClick} style={{ ...statCard, border: active ? `2px solid ${color}` : '2px solid transparent' }}>
+    <div style={{ fontSize: 13, color: '#667' }}>{label}</div>
+    <div style={{ fontSize: 28, fontWeight: 700, color, marginTop: 4 }}>{value}</div>
+  </button>
+);
+
+const page = { maxWidth: 1280, margin: '0 auto', padding: '24px 20px 48px', background: '#f4f7fb', minHeight: 'calc(100vh - 64px)' };
+const hero = {
+  background: 'linear-gradient(90deg,#2196F3,#21CBF3)',
+  color: '#fff',
+  borderRadius: 14,
+  padding: '22px 24px',
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  gap: 16,
+  flexWrap: 'wrap',
+  marginBottom: 18
+};
+const statGrid = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 18 };
+const statCard = { background: '#fff', borderRadius: 12, padding: '16px 18px', boxShadow: '0 1px 8px rgba(16,40,80,0.06)', textAlign: 'left', cursor: 'pointer', transition: 'box-shadow 0.15s ease, transform 0.15s ease' };
+const chipCount = { marginLeft: 8, fontSize: 12, background: '#eef3f8', color: '#445', borderRadius: 999, padding: '1px 7px', fontWeight: 700 };
+const card = { background: '#fff', borderRadius: 14, padding: 18, boxShadow: '0 1px 8px rgba(16,40,80,0.06)' };
+const toolbar = { display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: 14 };
+const searchInput = { flex: 1, minWidth: 220, padding: '10px 12px', border: '1px solid #d5dee8', borderRadius: 8, fontSize: 14 };
+const primaryBtn = { padding: '10px 16px', background: '#fff', color: '#1565c0', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 700 };
+const ghostBtn = { padding: '10px 14px', background: '#fff', color: '#1565c0', border: '1px solid #bcd7f5', borderRadius: 8, cursor: 'pointer' };
+const chip = (on) => ({
+  padding: '6px 12px',
+  borderRadius: 999,
+  border: on ? '1px solid #2196F3' : '1px solid #d5dee8',
+  background: on ? '#e8f4ff' : '#fff',
+  color: on ? '#1565c0' : '#445',
+  cursor: 'pointer',
+  textTransform: 'capitalize'
+});
+const table = { width: '100%', borderCollapse: 'collapse', minWidth: 1080 };
+const th = { textAlign: 'left', padding: '10px 12px', fontSize: 12, color: '#667', borderBottom: '1px solid #e6edf5', background: '#f8fbff', textTransform: 'uppercase', letterSpacing: 0.4 };
+const td = { padding: '12px', fontSize: 14, borderBottom: '1px solid #f0f3f8', verticalAlign: 'middle' };
+const tr = { background: '#fff' };
+const emptyCell = { textAlign: 'center', padding: 36, color: '#778' };
+const idBadge = { fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', background: '#eef6ff', color: '#1565c0', padding: '4px 8px', borderRadius: 6, fontWeight: 700 };
+const pill = { display: 'inline-block', padding: '3px 10px', borderRadius: 999, fontSize: 12, fontWeight: 700 };
+const barTrack = { height: 6, background: '#e9eef5', borderRadius: 99, overflow: 'hidden', minWidth: 70 };
+const barFill = { height: '100%', background: 'linear-gradient(90deg,#2196F3,#21CBF3)' };
+const errorBox = { background: '#ffebee', color: '#c0392b', padding: 12, borderRadius: 8, marginBottom: 16 };
+const smallBtn = (bg) => ({ padding: '6px 10px', background: bg, color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12 });
+const modalWrap = { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 950, padding: 20 };
+const modal = { background: '#fff', borderRadius: 12, padding: 22, width: 'min(480px, 100%)' };
 
 export default AdminDashboard;

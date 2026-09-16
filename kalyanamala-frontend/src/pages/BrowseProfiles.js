@@ -97,12 +97,10 @@ const BrowseProfiles = () => {
         const id = String(p.profileId || '');
         return id.toLowerCase().includes(q);
       }
-      const name = `${p.firstName || p.userId?.firstName || ''} ${p.lastName || p.userId?.lastName || ''}`.toLowerCase();
-      const email = String(p.userId?.email || '').toLowerCase();
-      const phone = String(p.userId?.phone || '');
-      return name.includes(q) || (isAdmin && (email.includes(q) || phone.includes(q)));
+      const name = `${p.firstName || p.userId?.firstName || ''} ${p.lastName || p.userId?.lastName || ''} ${p.userId?.surname || ''}`.toLowerCase();
+      return name.includes(q);
     });
-  }, [visible,query,searchBy,isAdmin]);
+  }, [visible, query, searchBy]);
 
   if (authLoading || busy) return <div style={{ padding: 40 }}>Loading profiles…</div>;
 
@@ -127,13 +125,13 @@ const BrowseProfiles = () => {
       <div style={{ ...box, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
         {isAdmin && (
           <select value={searchBy} onChange={(e) => setSearchBy(e.target.value)} style={input}>
-            <option value="name">Search by Name / Email / Phone</option>
+            <option value="name">Search by Name</option>
             <option value="id">Search by Profile ID</option>
           </select>
         )}
         <input
           style={{ ...input, flex: 1, minWidth: 220 }}
-          placeholder={searchBy === 'id' ? 'Profile ID (or last 6 digits)' : 'Name'}
+          placeholder={searchBy === 'id' ? 'Profile ID (M00001)' : 'Name'}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
@@ -180,7 +178,7 @@ const BrowseProfiles = () => {
                 </div>
 
                 <div style={{ fontSize: 12, color: '#999', marginTop: 6 }}>
-                  ID: {String(p.profileId || '').slice(-6)}
+                  ID: {p.profileId || '-'}
                 </div>
 
                 {isAdmin && (

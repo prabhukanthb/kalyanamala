@@ -363,6 +363,7 @@ const CreateProfile = () => {
         <div style={successBoxStyle}>
           <h3 style={{ marginTop: 0 }}>Profile created successfully</h3>
           <p><strong>Profile ID:</strong> {createdInfo.profileId}</p>
+          <p style={{ color: '#555' }}>Male IDs start with M and female IDs with F, sharing one 5-digit sequence (M00001, then F00002, and so on).</p>
           <p><strong>Login (email):</strong> {createdInfo.email}</p>
           <p><strong>Login (phone):</strong> {createdInfo.phone}</p>
           <p><strong>Temporary password:</strong> {createdInfo.tempPassword}</p>

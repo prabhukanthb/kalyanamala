@@ -17,6 +17,7 @@ const profileSchema = new mongoose.Schema(
     profileId: {
       type: String,
       unique: true,
+      sparse: true,
       index: true,
       default: null
     },

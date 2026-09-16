@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import ProfileDownloadCard from './ProfileDownloadCard';
 
 const profile = {
-  profileId: 'KM-2609M00001',
+  profileId: 'M00001',
   firstName: 'Ravi',
   lastName: 'Kumar',
   dateOfBirth: '1995-01-15',

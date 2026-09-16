@@ -6,6 +6,7 @@ const Register = () => {
   const [formData,setFormData] = useState({
     email: '',
     phone: '',
+    alternativePhone: '',
     firstName: '',
     lastName: '',
     password: '',
@@ -19,8 +20,8 @@ const Register = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name === 'phone') {
-      setFormData({ ...formData, phone: String(value || '').replace(/\D/g, '').slice(0, 10) });
+    if (name === 'phone' || name === 'alternativePhone') {
+      setFormData({ ...formData, [name]: String(value || '').replace(/\D/g, '').slice(0, 10) });
       return;
     }
     setFormData({ ...formData, [name]: value });
@@ -40,6 +41,7 @@ const Register = () => {
       const payload = {
         email: formData.email,
         phone: formData.phone,
+        alternativePhone: formData.alternativePhone || undefined,
         firstName: formData.firstName,
         lastName: formData.lastName,
         password: formData.password,
@@ -67,6 +69,12 @@ const Register = () => {
         <input style={input} name="phone" value={formData.phone} onChange={handleChange} inputMode="numeric" maxLength={10} />
         {formData.phone.length >= 1 && formData.phone.length <= 9 && (
           <div style={{ color: 'red', marginBottom: '10px' }}>Phone must be 10 digits</div>
+        )}
+
+        <label>Alternate Mobile (optional)</label>
+        <input style={input} name="alternativePhone" value={formData.alternativePhone} onChange={handleChange} inputMode="numeric" maxLength={10} />
+        {formData.alternativePhone.length >= 1 && formData.alternativePhone.length <= 9 && (
+          <div style={{ color: 'red', marginBottom: '10px' }}>Alternate mobile must be 10 digits</div>
         )}
 
         <label>First Name</label>

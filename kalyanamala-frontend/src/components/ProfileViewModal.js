@@ -47,6 +47,8 @@ const ProfileViewModal = ({ profile, isAdmin, onClose }) => {
   const [savingAcct,setSavingAcct] = React.useState(false);
   const [acctMsg,setAcctMsg] = React.useState('');
   const [acctOk,setAcctOk] = React.useState(false);
+  const [resetting,setResetting] = React.useState(false);
+  const [tempPassword,setTempPassword] = React.useState('');
 
   const [acct,setAcct] = React.useState({
     firstName: profile.userId?.firstName || '',
@@ -96,6 +98,34 @@ const ProfileViewModal = ({ profile, isAdmin, onClose }) => {
       setAcctOk(false);
     } finally {
       setSavingAcct(false);
+    }
+  };
+
+  const resetPassword = async () => {
+    setResetting(true);
+    setAcctMsg('');
+    setAcctOk(false);
+    setTempPassword('');
+    try {
+      const token = localStorage.getItem('token');
+      const userId = profile.userId?._id || profile.userId;
+      const res = await fetch(`${API_BASE}/api/admin/users/${userId}/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || data.error || 'Reset failed');
+      setTempPassword(data.tempPassword || '');
+      setAcctMsg(data.message || 'Password reset to the default format.');
+      setAcctOk(true);
+    } catch (e) {
+      setAcctMsg(e.message);
+      setAcctOk(false);
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -169,7 +199,7 @@ const ProfileViewModal = ({ profile, isAdmin, onClose }) => {
                     <R label="Status" value={profile.approvalStatus} />
 
                     <button
-                      onClick={() => { setEditing(true); setAcctMsg(''); }}
+                      onClick={() => { setEditing(true); setAcctMsg(''); setTempPassword(''); }}
                       style={{
                         marginTop: 10, padding: '7px 14px', border: '1px solid #2196F3',
                         background: '#fff', color: '#2196F3', borderRadius: 5, cursor: 'pointer'
@@ -177,6 +207,25 @@ const ProfileViewModal = ({ profile, isAdmin, onClose }) => {
                     >
                       Edit account details
                     </button>
+                    <button
+                      onClick={resetPassword}
+                      disabled={resetting}
+                      style={{
+                        marginTop: 10, marginLeft: 8, padding: '7px 14px', border: '1px solid #c0392b',
+                        background: resetting ? '#999' : '#c0392b', color: '#fff', borderRadius: 5,
+                        cursor: resetting ? 'not-allowed' : 'pointer'
+                      }}
+                    >
+                      {resetting ? 'Resetting…' : 'Reset password'}
+                    </button>
+                    {tempPassword && (
+                      <div style={{ marginTop: 10, padding: 10, background: '#e6f7ea', borderRadius: 6, color: '#1b7a3d' }}>
+                        Temporary password: <strong>{tempPassword}</strong>
+                        <div style={{ fontSize: 12, marginTop: 4 }}>
+                          Format: first 4 letters of name + @ + last 4 digits of registered mobile. Share this with the user.
+                        </div>
+                      </div>
+                    )}
                   </>
                 ) : (
                   <div style={{ background: '#f5f9ff', padding: 14, borderRadius: 8, border: '1px solid #d6e6ff' }}>

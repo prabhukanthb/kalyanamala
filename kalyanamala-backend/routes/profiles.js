@@ -6,6 +6,7 @@ const { body, validationResult } = require('express-validator');
 
 const Profile = require('../models/Profile');
 const User = require('../models/User');
+const { defaultPassword } = require('../utils/defaultPassword');
 
 // ==========================================
 // AUTH MIDDLEWARE
@@ -459,13 +460,7 @@ router.post(
         });
       }
 
-      // Temporary password the admin shares with the user
-      const namePart = safeString(firstName)
-        .replace(/[^a-zA-Z]/g, '')
-        .toUpperCase()
-        .slice(0, 4)
-        .padEnd(4, 'X');
-      const tempPassword = `KM-${namePart}-${String(phone).slice(-4)}`;
+      const tempPassword = defaultPassword(firstName, phone);
 
       const hashedPassword = await bcrypt.hash(
         tempPassword,

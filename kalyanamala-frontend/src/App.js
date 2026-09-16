@@ -13,6 +13,8 @@ import { AuthProvider, AuthContext } from './context/AuthContext';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
+import ChangePassword from './pages/ChangePassword';
 import Profile from './pages/Profile';
 import AdminDashboard from './pages/AdminDashboard';
 import CreateProfile from './pages/admin/CreateProfile';
@@ -73,6 +75,13 @@ const NavBar = () => {
               Profile
             </Link>
 
+            <Link
+              to="/change-password"
+              style={{ color: 'white', marginRight: '15px', textDecoration: 'none' }}
+            >
+              Password
+            </Link>
+
             {(user?.role === 'admin' || user?.role === 'subadmin') && (
               <Link
                 to="/admin"
@@ -125,11 +134,17 @@ function AppContent() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
   <Route path="/browse" element={<BrowseProfiles />} />
 
         <Route
           path="/profile"
           element={isAuthenticated ? <Profile /> : <Navigate to="/login" replace />}
+        />
+
+        <Route
+          path="/change-password"
+          element={isAuthenticated ? <ChangePassword /> : <Navigate to="/login" replace />}
         />
 
         <Route

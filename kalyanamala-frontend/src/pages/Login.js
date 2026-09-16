@@ -38,6 +38,7 @@ const Login = () => {
 
         <button style={button} disabled={loading}>{loading ? 'Logging in...' : 'Login'}</button>
       </form>
+      <p onClick={() => navigate('/forgot-password')} style={linkStyle}>Forgot password?</p>
       <p onClick={() => navigate('/register')} style={linkStyle}>Register here</p>
     </div>
   );

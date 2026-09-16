@@ -30,7 +30,8 @@ const initialForm = {
   streetName: '', city: '', state: '', country: 'India', pinCode: '',
   presentStreetName: '', presentCity: '', presentState: '', presentCountry: 'India', presentPinCode: '',
   nativePlace: '', fatherNativePlace: '', motherNativePlace: '',
-  aboutMe: '', partnerRequirement: '', preferredMatch: 'any_religion', caste: 'Mala'
+  aboutMe: '', partnerRequirement: '', preferredMatch: 'any_religion', caste: 'Mala',
+  alternativePhone: ''
 };
 
 const southIndianStates = stateOptions(true);
@@ -200,7 +201,7 @@ const Row = ({ label, value }) => (
 );
 
 const Profile = () => {
-  const { token, user } = useContext(AuthContext);
+  const { token, user, setUser } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const [loading,setLoading] = useState(true);
@@ -281,7 +282,8 @@ const Profile = () => {
           aboutMe: p.aboutMe || '',
           partnerRequirement: p.partnerRequirement || '',
           preferredMatch: p.preferredMatch || 'any_religion',
-          caste: 'Mala'
+          caste: 'Mala',
+          alternativePhone: user?.alternativePhone || p.userId?.alternativePhone || ''
         });
 
         setMode('view');
@@ -289,6 +291,10 @@ const Profile = () => {
         if (err.response?.status === 404) {
           setProfile(null);
           setMode('edit');
+          setForm((prev) => ({
+            ...prev,
+            alternativePhone: user?.alternativePhone || prev.alternativePhone || ''
+          }));
         } else if (err.response?.status === 401) {
           navigate('/');
         } else {
@@ -300,7 +306,7 @@ const Profile = () => {
     };
 
     loadProfile();
-  }, [token,navigate]);
+  }, [token, navigate, user?.alternativePhone]);
 
   useEffect(() => {
     if (activePhoto > photos.length - 1) setActivePhoto(0);
@@ -621,6 +627,12 @@ const Profile = () => {
       const saved = res.data.profile;
       setProfile(saved);
       setPhotos(Array.isArray(saved.photos) ? saved.photos : photos);
+      const acctRes = await axios.put(`${API_BASE}/api/auth/account`, {
+        alternativePhone: form.alternativePhone || ''
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (acctRes.data?.user && setUser) setUser(acctRes.data.user);
       setMode('view');
       setError('');
       setFieldErrors({});
@@ -662,12 +674,24 @@ const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
         </div>
       )}
 
+      {user?.passwordResetRequired && (
+        <div style={{ color: '#8a5a00', marginBottom: 15, padding: 10, background: '#fff6e6', borderRadius: 6 }}>
+          Please change your temporary password.{' '}
+          <button type="button" onClick={() => navigate('/change-password')} style={{ ...buttonStyle, padding: '6px 12px' }}>
+            Change password
+          </button>
+        </div>
+      )}
+
       <div style={{ marginBottom: 20 }}>
         <button type="button" onClick={() => setMode('view')} style={secondaryButtonStyle}>
           View Profile
         </button>
         <button type="button" onClick={() => setMode('edit')} style={buttonStyle}>
           Edit Profile
+        </button>
+        <button type="button" onClick={() => navigate('/change-password')} style={{ ...secondaryButtonStyle, backgroundColor: '#0d7377', marginLeft: 10 }}>
+          Change password
         </button>
       </div>
 
@@ -777,7 +801,7 @@ const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
               <Row label="Surname" value={user?.surname || ''} />
               <Row label="Email" value={user?.email || ''} />
               <Row label="Phone" value={user?.phone || profile.userId?.phone || ''} />
-              <Row label="Alternate Mobile" value={user?.alternativePhone || profile.userId?.alternativePhone || ''} />
+              <Row label="Alternate Mobile" value={user?.alternativePhone || profile.userId?.alternativePhone || form.alternativePhone || ''} />
 
               <h4 style={detailGroupTitle}>Basic Details</h4>
               <Row label="Gender" value={profile.gender || ''} />
@@ -842,6 +866,31 @@ const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
         </div>
       ) : (
         <form onSubmit={handleSave}>
+          <div style={sectionStyle}>
+            <h3>Account</h3>
+            <p style={{ marginTop: 0, color: '#555' }}>Registered email and mobile are used for login and password reset.</p>
+            <label>Email</label>
+            <input value={user?.email || ''} readOnly disabled style={inputStyle} />
+            <label>Registered mobile</label>
+            <input value={user?.phone || ''} readOnly disabled style={inputStyle} />
+            <label htmlFor="alternativePhone">Alternate Mobile</label>
+            <input
+              id="alternativePhone"
+              name="alternativePhone"
+              value={form.alternativePhone}
+              onChange={handleChange}
+              style={getStyle('alternativePhone')}
+              inputMode="numeric"
+              maxLength={10}
+            />
+            {(form.alternativePhone || '').length >= 1 && (form.alternativePhone || '').length <= 9 && (
+              <div style={{ color: 'red' }}>Alternate mobile must be 10 digits</div>
+            )}
+            <button type="button" onClick={() => navigate('/change-password')} style={{ ...secondaryButtonStyle, backgroundColor: '#0d7377' }}>
+              Change password
+            </button>
+          </div>
+
           <div style={sectionStyle}>
             <h3>Photos</h3>
             <p style={{ marginTop: 0, color: '#555' }}>

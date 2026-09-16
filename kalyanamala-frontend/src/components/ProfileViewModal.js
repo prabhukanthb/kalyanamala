@@ -40,6 +40,11 @@ const fieldLabels = {
 
 const digitsOnly = (value, max) => String(value || '').replace(/\D/g, '').slice(0, max);
 
+const prettyLabel = (value) => {
+  if (!value) return '';
+  return String(value).replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+};
+
 const ProfileViewModal = ({ profile, isAdmin, onClose }) => {
   const [active,setActive] = React.useState(0);
 
@@ -287,11 +292,11 @@ const ProfileViewModal = ({ profile, isAdmin, onClose }) => {
             )}
 
             <H>Basic Details</H>
-            <R label="Gender" value={profile.gender || ''} />
+            <R label="Gender" value={prettyLabel(profile.gender)} />
             <R label="Date of Birth" value={profile.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString('en-GB') : ''} />
             <R label="Age" value={age ? `${age} years` : ''} />
             <R label="Height" value={formatHeight(profile.heightFeet, profile.heightInches)} />
-            <R label="Marital Status" value={profile.maritalStatus || ''} />
+            <R label="Marital Status" value={prettyLabel(profile.maritalStatus)} />
 
             <H>Religion &amp; Family</H>
             <R label="Religion" value={profile.religion || ''} />

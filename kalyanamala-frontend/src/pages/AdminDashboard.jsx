@@ -6,6 +6,11 @@ import ProfileViewModal from '../components/ProfileViewModal';
 
 const API_BASE = 'https://kalyanamala-backend-production.up.railway.app';
 
+const prettyLabel = (value) => {
+  if (!value) return '-';
+  return String(value).replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+};
+
 const STATUS_FILTERS = ['all', 'pending', 'approved', 'rejected', 'deleted'];
 
 const statusTone = (status) => {
@@ -235,9 +240,9 @@ const AdminDashboard = () => {
                         <span style={idBadge}>{p.profileId || '-'}</span>
                       </td>
                       <td style={{ ...td, fontWeight: 600 }}>{name}</td>
-                      <td style={td}>{p.gender || '-'}</td>
+                      <td style={td}>{prettyLabel(p.gender)}</td>
                       <td style={td}>{p.religion || '-'}</td>
-                      <td style={td}>{p.maritalStatus || '-'}</td>
+                      <td style={td}>{prettyLabel(p.maritalStatus)}</td>
                       <td style={td}>
                         <span style={{ ...pill, background: tone.bg, color: tone.fg }}>{tone.label}</span>
                       </td>

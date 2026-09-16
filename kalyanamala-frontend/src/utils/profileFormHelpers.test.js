@@ -6,6 +6,8 @@ import {
   matchStateOption,
   parseHeightValue,
   pinLookupMessage,
+  prettyLabel,
+  fullName,
   stateOptions
 } from './profileFormHelpers';
 
@@ -57,4 +59,11 @@ test('pin lookup helper text updates after a successful fill', () => {
   expect(pinLookupMessage('')).toMatch(/auto-fill city, state and country/i);
   expect(pinLookupMessage('looking')).toBe('Looking up PIN…');
   expect(pinLookupMessage('filled')).toBe('City, state and country filled from PIN');
+});
+
+test('prettyLabel and fullName format profile fields for display', () => {
+  expect(prettyLabel('Nevermarried')).toBe('Never Married');
+  expect(prettyLabel('male')).toBe('Male');
+  expect(prettyLabel('any_religion')).toBe('Any Religion');
+  expect(fullName({ firstName: 'Sita', userId: { lastName: 'Devi', surname: 'Reddy' } })).toBe('Sita Devi Reddy');
 });

@@ -3,13 +3,10 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import ProfileViewModal from '../components/ProfileViewModal';
+import ProfileDownloadCard from '../components/ProfileDownloadCard';
+import { prettyLabel } from '../utils/profileFormHelpers';
 
 const API_BASE = 'https://kalyanamala-backend-production.up.railway.app';
-
-const prettyLabel = (value) => {
-  if (!value) return '-';
-  return String(value).replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-};
 
 const STATUS_FILTERS = ['all', 'pending', 'approved', 'rejected', 'deleted'];
 
@@ -35,6 +32,7 @@ const AdminDashboard = () => {
   const [search,setSearch] = useState('');
   const [status,setStatus] = useState('all');
   const [viewing,setViewing] = useState(null);
+  const [downloading,setDownloading] = useState(null);
   const [rejecting,setRejecting] = useState(null);
   const [rejectReason,setRejectReason] = useState('');
 
@@ -142,7 +140,7 @@ const AdminDashboard = () => {
   return (
     <div style={page}>
       <style>{`
-        .admin-row:hover td { background: #f5faff; }
+        .admin-row:hover td { background: #fbf3e8; }
         .admin-stat:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(16,40,80,0.1); }
       `}</style>
       <div style={hero}>
@@ -159,7 +157,7 @@ const AdminDashboard = () => {
       </div>
 
       <div style={statGrid}>
-        <StatCard label="Total profiles" value={counts.total} color="#2196F3" active={status === 'all'} onClick={() => applyStatus('all')} />
+        <StatCard label="Total profiles" value={counts.total} color="#8B1E3F" active={status === 'all'} onClick={() => applyStatus('all')} />
         <StatCard label="Pending" value={counts.pending} color="#e6a100" active={status === 'pending'} onClick={() => applyStatus('pending')} />
         <StatCard label="Approved" value={counts.approved} color="#2e9e57" active={status === 'approved'} onClick={() => applyStatus('approved')} />
         <StatCard label="Rejected" value={counts.rejected} color="#c0392b" active={status === 'rejected'} onClick={() => applyStatus('rejected')} />
@@ -240,9 +238,9 @@ const AdminDashboard = () => {
                         <span style={idBadge}>{p.profileId || '-'}</span>
                       </td>
                       <td style={{ ...td, fontWeight: 600 }}>{name}</td>
-                      <td style={td}>{prettyLabel(p.gender)}</td>
+                      <td style={td}>{prettyLabel(p.gender, '-')}</td>
                       <td style={td}>{p.religion || '-'}</td>
-                      <td style={td}>{prettyLabel(p.maritalStatus)}</td>
+                      <td style={td}>{prettyLabel(p.maritalStatus, '-')}</td>
                       <td style={td}>
                         <span style={{ ...pill, background: tone.bg, color: tone.fg }}>{tone.label}</span>
                       </td>
@@ -255,7 +253,8 @@ const AdminDashboard = () => {
                       </td>
                       <td style={td}>
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                          <button type="button" onClick={() => setViewing(p)} style={smallBtn('#2196F3')}>View</button>
+                          <button type="button" onClick={() => setViewing(p)} style={smallBtn('#8B1E3F')}>View</button>
+                          <button type="button" onClick={() => setDownloading(p)} style={smallBtn('#C9A227', '#5C1028')}>Download</button>
                           <button type="button" onClick={() => navigate(`/admin/profiles/${p._id}/edit`)} style={smallBtn('#0d7377')}>Edit</button>
                           {p.approvalStatus !== 'approved' && p.approvalStatus !== 'deleted' && (
                             <button type="button" onClick={() => handleApprove(p._id)} style={smallBtn('#2e9e57')}>Approve</button>
@@ -286,6 +285,10 @@ const AdminDashboard = () => {
 
       {viewing && (
         <ProfileViewModal profile={viewing} isAdmin onClose={() => setViewing(null)} />
+      )}
+
+      {downloading && (
+        <ProfileDownloadCard profile={downloading} onClose={() => setDownloading(null)} />
       )}
 
       {rejecting && (
@@ -319,9 +322,9 @@ const StatCard = ({ label, value, color, active, onClick }) => (
   </button>
 );
 
-const page = { maxWidth: 1280, margin: '0 auto', padding: '24px 20px 48px', background: '#f4f7fb', minHeight: 'calc(100vh - 64px)' };
+const page = { maxWidth: 1280, margin: '0 auto', padding: '24px 20px 48px', background: '#FBF6EE', minHeight: 'calc(100vh - 64px)' };
 const hero = {
-  background: 'linear-gradient(90deg,#2196F3,#21CBF3)',
+  background: 'linear-gradient(90deg,#8B1E3F,#b43b4a)',
   color: '#fff',
   borderRadius: 14,
   padding: '22px 24px',
@@ -338,14 +341,14 @@ const chipCount = { marginLeft: 8, fontSize: 12, background: '#eef3f8', color: '
 const card = { background: '#fff', borderRadius: 14, padding: 18, boxShadow: '0 1px 8px rgba(16,40,80,0.06)' };
 const toolbar = { display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: 14 };
 const searchInput = { flex: 1, minWidth: 220, padding: '10px 12px', border: '1px solid #d5dee8', borderRadius: 8, fontSize: 14 };
-const primaryBtn = { padding: '10px 16px', background: '#fff', color: '#1565c0', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 700 };
-const ghostBtn = { padding: '10px 14px', background: '#fff', color: '#1565c0', border: '1px solid #bcd7f5', borderRadius: 8, cursor: 'pointer' };
+const primaryBtn = { padding: '10px 16px', background: '#C9A227', color: '#5C1028', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 700 };
+const ghostBtn = { padding: '10px 14px', background: '#fff', color: '#8B1E3F', border: '1px solid #e4c98a', borderRadius: 8, cursor: 'pointer' };
 const chip = (on) => ({
   padding: '6px 12px',
   borderRadius: 999,
-  border: on ? '1px solid #2196F3' : '1px solid #d5dee8',
-  background: on ? '#e8f4ff' : '#fff',
-  color: on ? '#1565c0' : '#445',
+  border: on ? '1px solid #8B1E3F' : '1px solid #e8d7c4',
+  background: on ? '#f8eadc' : '#fff',
+  color: on ? '#8B1E3F' : '#445',
   cursor: 'pointer',
   textTransform: 'capitalize'
 });
@@ -354,12 +357,12 @@ const th = { textAlign: 'left', padding: '10px 12px', fontSize: 12, color: '#667
 const td = { padding: '12px', fontSize: 14, borderBottom: '1px solid #f0f3f8', verticalAlign: 'middle' };
 const tr = { background: '#fff' };
 const emptyCell = { textAlign: 'center', padding: 36, color: '#778' };
-const idBadge = { fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', background: '#eef6ff', color: '#1565c0', padding: '4px 8px', borderRadius: 6, fontWeight: 700 };
+const idBadge = { fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', background: '#f8eadc', color: '#8B1E3F', padding: '4px 8px', borderRadius: 6, fontWeight: 700 };
 const pill = { display: 'inline-block', padding: '3px 10px', borderRadius: 999, fontSize: 12, fontWeight: 700 };
 const barTrack = { height: 6, background: '#e9eef5', borderRadius: 99, overflow: 'hidden', minWidth: 70 };
-const barFill = { height: '100%', background: 'linear-gradient(90deg,#2196F3,#21CBF3)' };
+const barFill = { height: '100%', background: 'linear-gradient(90deg,#8B1E3F,#C9A227)' };
 const errorBox = { background: '#ffebee', color: '#c0392b', padding: 12, borderRadius: 8, marginBottom: 16 };
-const smallBtn = (bg) => ({ padding: '6px 10px', background: bg, color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12 });
+const smallBtn = (bg, color = '#fff') => ({ padding: '6px 10px', background: bg, color, border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 700 });
 const modalWrap = { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 950, padding: 20 };
 const modal = { background: '#fff', borderRadius: 12, padding: 22, width: 'min(480px, 100%)' };
 

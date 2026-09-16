@@ -33,12 +33,13 @@ const NavBar = () => {
   return (
     <nav
       style={{
-        backgroundColor: '#333',
+        background: '#5C1028',
         color: 'white',
-        padding: '15px 20px',
+        padding: '14px 22px',
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        gap: 12
       }}
     >
       <Link
@@ -46,11 +47,14 @@ const NavBar = () => {
         style={{
           color: 'white',
           textDecoration: 'none',
-          fontSize: '20px',
-          fontWeight: 'bold'
+          fontSize: '22px',
+          fontWeight: 'bold',
+          fontFamily: 'Georgia, serif',
+          letterSpacing: 0.4
         }}
       >
-        💍 Kalyanamala
+        <span style={{ color: '#C9A227', marginRight: 8 }}>💍</span>
+        Kalyanamala
       </Link>
 
       <div>
@@ -95,11 +99,12 @@ const NavBar = () => {
               onClick={handleLogout}
               style={{
                 padding: '8px 15px',
-                backgroundColor: '#ff6b6b',
-                color: 'white',
+                backgroundColor: '#C9A227',
+                color: '#5C1028',
                 border: 'none',
                 cursor: 'pointer',
-                borderRadius: '5px'
+                borderRadius: '8px',
+                fontWeight: 700
               }}
             >
               Logout

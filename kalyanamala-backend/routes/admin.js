@@ -161,6 +161,7 @@ const profileValidation = [
 
   body('nativePlace').trim().notEmpty().withMessage('Native place is required'),
   body('fatherNativePlace').trim().notEmpty().withMessage("Father's native place is required"),
+  body('motherNativePlace').trim().notEmpty().withMessage("Mother's native place is required"),
 
   body('aboutMe').notEmpty().withMessage('About me is required'),
   body('partnerRequirement').trim().notEmpty().isLength({ max: 1000 }).withMessage('Partner requirement is required (max 1000 characters)')
@@ -229,6 +230,7 @@ function buildProfilePayload(bodyData, reqUserId, isAdminCreate = false) {
 
     nativePlace: bodyData.nativePlace,
     fatherNativePlace: bodyData.fatherNativePlace,
+    motherNativePlace: bodyData.motherNativePlace,
 
     photos: Array.isArray(bodyData.photos) ? bodyData.photos.slice(0, 3) : [],
     aboutMe: bodyData.aboutMe,

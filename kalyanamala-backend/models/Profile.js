@@ -292,6 +292,12 @@ const profileSchema = new mongoose.Schema(
       default: ''
     },
 
+    motherNativePlace: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+
     partnerRequirement: {
       type: String,
       maxlength: 1000,
@@ -447,6 +453,7 @@ profileSchema.methods.calculateCompletion = function () {
     'presentAddress.pinCode',
     'nativePlace',
     'fatherNativePlace',
+    'motherNativePlace',
     'aboutMe',
     'partnerRequirement'
   ];

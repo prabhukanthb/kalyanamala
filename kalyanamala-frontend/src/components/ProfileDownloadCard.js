@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import html2canvas from 'html2canvas';
+import { formatHeight } from '../utils/profileFormHelpers';
 
 const BRAND = 'New Kalyanamala Matrimony';
 const CONTACT_PERSON = 'B. John Ratnam';
@@ -123,7 +124,7 @@ const ProfileDownloadCard = ({ profile, onClose }) => {
                 <F label="Full Name" value={name} />
                 <F label="Date of Birth" value={profile.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString('en-GB') : ''} />
                 <F label="Age" value={age ? `${age} years` : ''} />
-                <F label="Height" value={`${profile.heightFeet || '-'} ft ${profile.heightInches || 0} in`} />
+                <F label="Height" value={formatHeight(profile.heightFeet, profile.heightInches)} />
                 <F label="Marital Status" value={profile.maritalStatus || ''} />
                 <F label="City & State" value={[profile.currentAddress?.city, profile.currentAddress?.state].filter(Boolean).join(', ')} />
               </Group>
@@ -152,12 +153,14 @@ const ProfileDownloadCard = ({ profile, onClose }) => {
             </Group>
 
             <Group title="Family">
+              <F label="Siblings" value={profile.siblingsCount} />
               <F label="Father's Name" value={profile.fatherName || ''} />
               <F label="Father Occupation" value={profile.fatherOccupation || ''} />
+              <F label="Father Native" value={profile.fatherNativePlace || ''} />
               <F label="Mother's Name" value={profile.motherName || ''} />
-              <F label="Siblings" value={profile.siblingsCount} />
+              <F label="Mother Occupation" value={profile.motherOccupation || ''} />
+              <F label="Mother Native" value={profile.motherNativePlace || ''} />
               <F label="Native Place" value={profile.nativePlace || ''} />
-              <F label="Father's Native Place" value={profile.fatherNativePlace || ''} />
             </Group>
           </div>
 

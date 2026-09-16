@@ -17,6 +17,8 @@ const profile = {
   fatherName: 'Rao',
   fatherOccupation: 'Teacher',
   motherName: 'Lakshmi',
+  motherOccupation: 'Homemaker',
+  motherNativePlace: 'Ongole',
   siblingsCount: 1,
   nativePlace: 'Guntur',
   fatherNativePlace: 'Vijayawada',
@@ -36,6 +38,7 @@ test('PNG card shows native places and partner requirement without contact PII',
 
   expect(screen.getByText('Guntur')).toBeInTheDocument();
   expect(screen.getByText('Vijayawada')).toBeInTheDocument();
+  expect(screen.getByText('Ongole')).toBeInTheDocument();
   expect(screen.getByText('Looking for a kind partner from the Mala community.')).toBeInTheDocument();
   expect(screen.queryByText('secret@example.com')).not.toBeInTheDocument();
   expect(screen.queryByText('9876543210')).not.toBeInTheDocument();

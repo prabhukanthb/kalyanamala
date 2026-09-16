@@ -2,6 +2,17 @@ import React, { useContext, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import {
+  HEIGHT_OPTIONS,
+  formatHeight,
+  heightToValue,
+  lookupIndianPincode,
+  matchStateOption,
+  parseHeightValue,
+  pinLookupColor,
+  pinLookupMessage,
+  stateOptions
+} from '../utils/profileFormHelpers';
 
 const API_BASE = 'https://kalyanamala-backend-production.up.railway.app';
 
@@ -10,7 +21,7 @@ const UPLOAD_PRESET = 'kalyanamala';
 const MAX_PHOTOS = 3;
 
 const initialForm = {
-  gender: '', dateOfBirth: '', heightFeet: '', heightInches: '',
+  gender: '', dateOfBirth: '', height: '', heightFeet: '', heightInches: '',
   religion: '', subCaste: '', siblingsCount: '', maritalStatus: '',
   fatherName: '', fatherOccupation: '', motherName: '', motherOccupation: '',
   highestEducation: '', fieldOfStudy: '', college: '', occupation: '',
@@ -18,11 +29,11 @@ const initialForm = {
   industry: '', income: '', incomeCurrency: 'INR',
   streetName: '', city: '', state: '', country: 'India', pinCode: '',
   presentStreetName: '', presentCity: '', presentState: '', presentCountry: 'India', presentPinCode: '',
-  nativePlace: '', fatherNativePlace: '',
+  nativePlace: '', fatherNativePlace: '', motherNativePlace: '',
   aboutMe: '', partnerRequirement: '', preferredMatch: 'any_religion', caste: 'Mala'
 };
 
-const southIndianStates = ['AndhraPradesh','Telangana','Karnataka','TamilNadu','Kerala','Puducherry'];
+const southIndianStates = stateOptions(true);
 
 const educationOptions = [
   '10th Pass','12th Pass','Diploma','ITI','B.A','B.Sc','B.Com','B.Tech',
@@ -60,8 +71,6 @@ const genderOptions = [
   { label: 'Female', value: 'female' }
 ];
 
-const heightFeetOptions = [4,5,6,7];
-const heightInchesOptions = [0,1,2,3,4,5,6,7,8,9,10,11];
 const siblingCountOptions = [0,1,2,3];
 
 const inputStyle = {
@@ -199,6 +208,7 @@ const Profile = () => {
   const [error,setError] = useState('');
   const [notice,setNotice] = useState('');
   const [fieldErrors,setFieldErrors] = useState({});
+  const [pinStatus,setPinStatus] = useState({});
   const [profile,setProfile] = useState(null);
   const [mode,setMode] = useState('view');
   const [form,setForm] = useState(initialForm);
@@ -235,6 +245,7 @@ const Profile = () => {
           dateOfBirth: p.dateOfBirth ? new Date(p.dateOfBirth).toISOString().split('T')[0] : '',
           heightFeet: p.heightFeet?.toString() || '',
           heightInches: p.heightInches?.toString() || '',
+          height: heightToValue(p.heightFeet, p.heightInches),
           religion: p.religion || '',
           subCaste: p.subCaste || '',
           siblingsCount: p.siblingsCount?.toString() || '',
@@ -266,6 +277,7 @@ const Profile = () => {
           presentPinCode: p.presentAddress?.pinCode || '',
           nativePlace: p.nativePlace || '',
           fatherNativePlace: p.fatherNativePlace || '',
+          motherNativePlace: p.motherNativePlace || '',
           aboutMe: p.aboutMe || '',
           partnerRequirement: p.partnerRequirement || '',
           preferredMatch: p.preferredMatch || 'any_religion',
@@ -294,6 +306,40 @@ const Profile = () => {
     if (activePhoto > photos.length - 1) setActivePhoto(0);
   }, [photos,activePhoto]);
 
+  const fillAddressFromPin = async (fieldName, pin) => {
+    setPinStatus((prev) => ({ ...prev, [fieldName]: 'looking' }));
+    try {
+      const details = await lookupIndianPincode(pin);
+      if (!details) {
+        setPinStatus((prev) => ({ ...prev, [fieldName]: '' }));
+        setFieldErrors((prev) => ({ ...prev, [fieldName]: 'No address found for this PIN' }));
+        return;
+      }
+      const state = matchStateOption(details.state, southIndianStates);
+      if (fieldName === 'presentPinCode') {
+        setForm((prev) => ({
+          ...prev,
+          presentCity: details.city || prev.presentCity,
+          presentState: state || prev.presentState,
+          presentCountry: details.country || prev.presentCountry || 'India',
+          presentStreetName: prev.presentStreetName || details.area || ''
+        }));
+      } else {
+        setForm((prev) => ({
+          ...prev,
+          city: details.city || prev.city,
+          state: state || prev.state,
+          country: details.country || prev.country || 'India',
+          streetName: prev.streetName || details.area || ''
+        }));
+      }
+      setPinStatus((prev) => ({ ...prev, [fieldName]: 'filled' }));
+    } catch (err) {
+      setPinStatus((prev) => ({ ...prev, [fieldName]: '' }));
+      setFieldErrors((prev) => ({ ...prev, [fieldName]: 'Could not look up this PIN' }));
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     let next = value;
@@ -301,9 +347,26 @@ const Profile = () => {
       next = digitsOnly(value, 10);
     } else if (name === 'pinCode' || name === 'presentPinCode') {
       next = digitsOnly(value, 6);
+    } else if (name === 'height') {
+      const parsed = parseHeightValue(next);
+      setForm((prev) => ({
+        ...prev,
+        height: next,
+        heightFeet: parsed.heightFeet === '' ? '' : String(parsed.heightFeet),
+        heightInches: parsed.heightInches === '' ? '' : String(parsed.heightInches)
+      }));
+      setFieldErrors((prev) => ({ ...prev, height: '', heightFeet: '', heightInches: '' }));
+      return;
     }
     setForm((prev) => ({ ...prev, [name]: next }));
     setFieldErrors((prev) => ({ ...prev, [name]: '' }));
+    if (name === 'pinCode' || name === 'presentPinCode') {
+      if (next.length === 6) {
+        fillAddressFromPin(name, next);
+      } else {
+        setPinStatus((prev) => ({ ...prev, [name]: '' }));
+      }
+    }
   };
 
   const uploadToCloudinary = async (files, currentCount) => {
@@ -496,16 +559,18 @@ const Profile = () => {
     const payload = {
       gender: form.gender,
       dateOfBirth: form.dateOfBirth,
-      heightFeet: Number(form.heightFeet),
-      heightInches: Number(form.heightInches),
+      heightFeet: parseHeightValue(form.height || heightToValue(form.heightFeet, form.heightInches)).heightFeet,
+      heightInches: parseHeightValue(form.height || heightToValue(form.heightFeet, form.heightInches)).heightInches,
       religion: form.religion,
       subCaste: form.subCaste,
       siblingsCount: Number(form.siblingsCount || 0),
       maritalStatus: form.maritalStatus,
       fatherName: form.fatherName,
       fatherOccupation: form.fatherOccupation,
+      fatherNativePlace: form.fatherNativePlace,
       motherName: form.motherName,
       motherOccupation: form.motherOccupation,
+      motherNativePlace: form.motherNativePlace,
       highestEducation: form.highestEducation,
       fieldOfStudy: form.fieldOfStudy,
       college: form.college,
@@ -532,7 +597,6 @@ const Profile = () => {
         pinCode: form.presentPinCode
       },
       nativePlace: form.nativePlace,
-      fatherNativePlace: form.fatherNativePlace,
       aboutMe: form.aboutMe,
       partnerRequirement: form.partnerRequirement,
       preferredMatch: form.preferredMatch,
@@ -615,7 +679,7 @@ const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
                 <h2 style={{ margin: 0, fontSize: 24 }}>{fullName || 'Member'}</h2>
                 <div style={{ fontSize: 14, opacity: 0.95, marginTop: 4 }}>
                   {age ? `${age} yrs` : ''}
-                  {profile.heightFeet ? ` · ${profile.heightFeet}'${profile.heightInches || 0}"` : ''}
+                  {formatHeight(profile.heightFeet, profile.heightInches) ? ` · ${formatHeight(profile.heightFeet, profile.heightInches)}` : ''}
                   {profile.occupation ? ` · ${profile.occupation}` : ''}
                   {profile.currentAddress?.city ? ` · ${profile.currentAddress.city}` : ''}
                 </div>
@@ -719,7 +783,7 @@ const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
               <Row label="Gender" value={profile.gender || ''} />
               <Row label="Date of Birth" value={profile.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString('en-GB') : ''} />
               <Row label="Age" value={age ? `${age} years` : ''} />
-              <Row label="Height" value={`${profile.heightFeet || '-'} ft ${profile.heightInches || 0} in`} />
+              <Row label="Height" value={formatHeight(profile.heightFeet, profile.heightInches)} />
               <Row label="Marital Status" value={profile.maritalStatus || ''} />
 
               <h4 style={detailGroupTitle}>Religion &amp; Family</h4>
@@ -727,12 +791,13 @@ const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
               <Row label="Caste" value={profile.caste || 'Mala'} />
               <Row label="Sub Caste" value={profile.subCaste || ''} />
               <Row label="Siblings" value={profile.siblingsCount} />
+              <Row label="Native Place" value={profile.nativePlace || ''} />
               <Row label="Father's Name" value={profile.fatherName || ''} />
               <Row label="Father Occupation" value={profile.fatherOccupation || ''} />
+              <Row label="Father Native" value={profile.fatherNativePlace || ''} />
               <Row label="Mother's Name" value={profile.motherName || ''} />
               <Row label="Mother Occupation" value={profile.motherOccupation || ''} />
-              <Row label="Native Place" value={profile.nativePlace || ''} />
-              <Row label="Father's Native Place" value={profile.fatherNativePlace || ''} />
+              <Row label="Mother Native" value={profile.motherNativePlace || ''} />
 
               <h4 style={detailGroupTitle}>Education &amp; Career</h4>
               <Row label="Highest Education" value={profile.highestEducation || ''} />
@@ -826,18 +891,13 @@ const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
             <input id="dateOfBirth" type="date" name="dateOfBirth" value={form.dateOfBirth} onChange={handleChange} style={getStyle('dateOfBirth')} max={maxDOB} required />
             {fieldErrors.dateOfBirth && <div style={{ color: 'red' }}>{fieldErrors.dateOfBirth}</div>}
 
-            <label htmlFor="heightFeet">Height Feet</label>
-            <select id="heightFeet" name="heightFeet" value={form.heightFeet} onChange={handleChange} style={getStyle('heightFeet')} required>
+            <label htmlFor="height">Height</label>
+            <select id="height" name="height" value={form.height || heightToValue(form.heightFeet, form.heightInches)} onChange={handleChange} style={getStyle('height')} required>
               <option value="">Select</option>
-              {heightFeetOptions.map((n) => <option key={n} value={n}>{n}</option>)}
+              {HEIGHT_OPTIONS.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
             </select>
+            {fieldErrors.height && <div style={{ color: 'red' }}>{fieldErrors.height}</div>}
             {fieldErrors.heightFeet && <div style={{ color: 'red' }}>{fieldErrors.heightFeet}</div>}
-
-            <label htmlFor="heightInches">Height Inches</label>
-            <select id="heightInches" name="heightInches" value={form.heightInches} onChange={handleChange} style={getStyle('heightInches')} required>
-              <option value="">Select</option>
-              {heightInchesOptions.map((n) => <option key={n} value={n}>{n}</option>)}
-            </select>
             {fieldErrors.heightInches && <div style={{ color: 'red' }}>{fieldErrors.heightInches}</div>}
           </div>
 
@@ -875,29 +935,38 @@ const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
             </select>
             {fieldErrors.maritalStatus && <div style={{ color: 'red' }}>{fieldErrors.maritalStatus}</div>}
 
-            <label htmlFor="fatherName">Father’s Name</label>
-            <input id="fatherName" name="fatherName" value={form.fatherName} onChange={handleChange} style={getStyle('fatherName')} required />
-            {fieldErrors.fatherName && <div style={{ color: 'red' }}>{fieldErrors.fatherName}</div>}
-
-            <label htmlFor="fatherOccupation">Father Occupation</label>
-            <input id="fatherOccupation" name="fatherOccupation" value={form.fatherOccupation} onChange={handleChange} style={getStyle('fatherOccupation')} required />
-            {fieldErrors.fatherOccupation && <div style={{ color: 'red' }}>{fieldErrors.fatherOccupation}</div>}
-
-            <label htmlFor="motherName">Mother’s Name</label>
-            <input id="motherName" name="motherName" value={form.motherName} onChange={handleChange} style={getStyle('motherName')} required />
-            {fieldErrors.motherName && <div style={{ color: 'red' }}>{fieldErrors.motherName}</div>}
-
-            <label htmlFor="motherOccupation">Mother Occupation</label>
-            <input id="motherOccupation" name="motherOccupation" value={form.motherOccupation} onChange={handleChange} style={getStyle('motherOccupation')} required />
-            {fieldErrors.motherOccupation && <div style={{ color: 'red' }}>{fieldErrors.motherOccupation}</div>}
-
             <label htmlFor="nativePlace">Native Place</label>
             <input id="nativePlace" name="nativePlace" value={form.nativePlace} onChange={handleChange} style={getStyle('nativePlace')} required />
             {fieldErrors.nativePlace && <div style={{ color: 'red' }}>{fieldErrors.nativePlace}</div>}
 
-            <label htmlFor="fatherNativePlace">Father’s Native Place</label>
-            <input id="fatherNativePlace" name="fatherNativePlace" value={form.fatherNativePlace} onChange={handleChange} style={getStyle('fatherNativePlace')} required />
-            {fieldErrors.fatherNativePlace && <div style={{ color: 'red' }}>{fieldErrors.fatherNativePlace}</div>}
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+              <div style={{ flex: '1 1 280px' }}>
+                <label htmlFor="fatherName">Father’s Name</label>
+                <input id="fatherName" name="fatherName" value={form.fatherName} onChange={handleChange} style={getStyle('fatherName')} required />
+                {fieldErrors.fatherName && <div style={{ color: 'red' }}>{fieldErrors.fatherName}</div>}
+
+                <label htmlFor="fatherOccupation">Father Occupation</label>
+                <input id="fatherOccupation" name="fatherOccupation" value={form.fatherOccupation} onChange={handleChange} style={getStyle('fatherOccupation')} required />
+                {fieldErrors.fatherOccupation && <div style={{ color: 'red' }}>{fieldErrors.fatherOccupation}</div>}
+
+                <label htmlFor="fatherNativePlace">Father Native</label>
+                <input id="fatherNativePlace" name="fatherNativePlace" value={form.fatherNativePlace} onChange={handleChange} style={getStyle('fatherNativePlace')} required />
+                {fieldErrors.fatherNativePlace && <div style={{ color: 'red' }}>{fieldErrors.fatherNativePlace}</div>}
+              </div>
+              <div style={{ flex: '1 1 280px' }}>
+                <label htmlFor="motherName">Mother’s Name</label>
+                <input id="motherName" name="motherName" value={form.motherName} onChange={handleChange} style={getStyle('motherName')} required />
+                {fieldErrors.motherName && <div style={{ color: 'red' }}>{fieldErrors.motherName}</div>}
+
+                <label htmlFor="motherOccupation">Mother Occupation</label>
+                <input id="motherOccupation" name="motherOccupation" value={form.motherOccupation} onChange={handleChange} style={getStyle('motherOccupation')} required />
+                {fieldErrors.motherOccupation && <div style={{ color: 'red' }}>{fieldErrors.motherOccupation}</div>}
+
+                <label htmlFor="motherNativePlace">Mother Native</label>
+                <input id="motherNativePlace" name="motherNativePlace" value={form.motherNativePlace} onChange={handleChange} style={getStyle('motherNativePlace')} required />
+                {fieldErrors.motherNativePlace && <div style={{ color: 'red' }}>{fieldErrors.motherNativePlace}</div>}
+              </div>
+            </div>
           </div>
 
           <div style={sectionStyle}>
@@ -953,9 +1022,12 @@ const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
           <div style={sectionStyle}>
             <h3>Current Address</h3>
 
-            <label htmlFor="streetName">Street Name</label>
-            <input id="streetName" name="streetName" value={form.streetName} onChange={handleChange} style={getStyle('streetName')} required />
-            {fieldErrors.streetName && <div style={{ color: 'red' }}>{fieldErrors.streetName}</div>}
+            <label htmlFor="pinCode">Pin Code</label>
+            <input id="pinCode" name="pinCode" value={form.pinCode} onChange={handleChange} style={getStyle('pinCode')} inputMode="numeric" maxLength={6} required />
+            <div style={{ color: pinLookupColor(pinStatus.pinCode), fontSize: 12, marginTop: -6, marginBottom: 12 }}>
+              {pinLookupMessage(pinStatus.pinCode)}
+            </div>
+            {fieldErrors.pinCode && <div style={{ color: 'red' }}>{fieldErrors.pinCode}</div>}
 
             <label htmlFor="city">City</label>
             <input id="city" name="city" value={form.city} onChange={handleChange} style={getStyle('city')} required />
@@ -965,6 +1037,7 @@ const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
             <select id="state" name="state" value={form.state} onChange={handleChange} style={getStyle('state')} required>
               <option value="">Select State</option>
               {southIndianStates.map((s) => <option key={s} value={s}>{s}</option>)}
+              {form.state && !southIndianStates.includes(form.state) && <option value={form.state}>{form.state}</option>}
             </select>
             {fieldErrors.state && <div style={{ color: 'red' }}>{fieldErrors.state}</div>}
 
@@ -972,17 +1045,20 @@ const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
             <input id="country" name="country" value={form.country} onChange={handleChange} style={getStyle('country')} required />
             {fieldErrors.country && <div style={{ color: 'red' }}>{fieldErrors.country}</div>}
 
-            <label htmlFor="pinCode">Pin Code</label>
-            <input id="pinCode" name="pinCode" value={form.pinCode} onChange={handleChange} style={getStyle('pinCode')} inputMode="numeric" maxLength={6} required />
-            {fieldErrors.pinCode && <div style={{ color: 'red' }}>{fieldErrors.pinCode}</div>}
+            <label htmlFor="streetName">Street Name</label>
+            <input id="streetName" name="streetName" value={form.streetName} onChange={handleChange} style={getStyle('streetName')} required />
+            {fieldErrors.streetName && <div style={{ color: 'red' }}>{fieldErrors.streetName}</div>}
           </div>
 
           <div style={sectionStyle}>
             <h3>Present Address</h3>
 
-            <label htmlFor="presentStreetName">Street Name</label>
-            <input id="presentStreetName" name="presentStreetName" value={form.presentStreetName} onChange={handleChange} style={getStyle('presentStreetName')} required />
-            {fieldErrors.presentStreetName && <div style={{ color: 'red' }}>{fieldErrors.presentStreetName}</div>}
+            <label htmlFor="presentPinCode">Pin Code</label>
+            <input id="presentPinCode" name="presentPinCode" value={form.presentPinCode} onChange={handleChange} style={getStyle('presentPinCode')} inputMode="numeric" maxLength={6} required />
+            <div style={{ color: pinLookupColor(pinStatus.presentPinCode), fontSize: 12, marginTop: -6, marginBottom: 12 }}>
+              {pinLookupMessage(pinStatus.presentPinCode)}
+            </div>
+            {fieldErrors.presentPinCode && <div style={{ color: 'red' }}>{fieldErrors.presentPinCode}</div>}
 
             <label htmlFor="presentCity">City</label>
             <input id="presentCity" name="presentCity" value={form.presentCity} onChange={handleChange} style={getStyle('presentCity')} required />
@@ -992,6 +1068,7 @@ const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
             <select id="presentState" name="presentState" value={form.presentState} onChange={handleChange} style={getStyle('presentState')} required>
               <option value="">Select State</option>
               {southIndianStates.map((s) => <option key={s} value={s}>{s}</option>)}
+              {form.presentState && !southIndianStates.includes(form.presentState) && <option value={form.presentState}>{form.presentState}</option>}
             </select>
             {fieldErrors.presentState && <div style={{ color: 'red' }}>{fieldErrors.presentState}</div>}
 
@@ -999,9 +1076,9 @@ const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
             <input id="presentCountry" name="presentCountry" value={form.presentCountry} onChange={handleChange} style={getStyle('presentCountry')} required />
             {fieldErrors.presentCountry && <div style={{ color: 'red' }}>{fieldErrors.presentCountry}</div>}
 
-            <label htmlFor="presentPinCode">Pin Code</label>
-            <input id="presentPinCode" name="presentPinCode" value={form.presentPinCode} onChange={handleChange} style={getStyle('presentPinCode')} inputMode="numeric" maxLength={6} required />
-            {fieldErrors.presentPinCode && <div style={{ color: 'red' }}>{fieldErrors.presentPinCode}</div>}
+            <label htmlFor="presentStreetName">Street Name</label>
+            <input id="presentStreetName" name="presentStreetName" value={form.presentStreetName} onChange={handleChange} style={getStyle('presentStreetName')} required />
+            {fieldErrors.presentStreetName && <div style={{ color: 'red' }}>{fieldErrors.presentStreetName}</div>}
           </div>
 
           <div style={sectionStyle}>

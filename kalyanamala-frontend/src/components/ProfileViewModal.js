@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatHeight } from '../utils/profileFormHelpers';
 
 const API_BASE = 'https://kalyanamala-backend-production.up.railway.app';
 
@@ -115,7 +116,7 @@ const ProfileViewModal = ({ profile, isAdmin, onClose }) => {
             <h2 style={{ margin: 0, fontSize: 22 }}>{name || 'Member'}</h2>
             <div style={{ fontSize: 13, opacity: 0.95 }}>
               {age ? `${age} yrs` : ''}
-              {profile.heightFeet ? ` · ${profile.heightFeet}'${profile.heightInches || 0}"` : ''}
+              {formatHeight(profile.heightFeet, profile.heightInches) ? ` · ${formatHeight(profile.heightFeet, profile.heightInches)}` : ''}
               {profile.currentAddress?.city ? ` · ${profile.currentAddress.city}` : ''}
             </div>
           </div>
@@ -240,7 +241,7 @@ const ProfileViewModal = ({ profile, isAdmin, onClose }) => {
             <R label="Gender" value={profile.gender || ''} />
             <R label="Date of Birth" value={profile.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString('en-GB') : ''} />
             <R label="Age" value={age ? `${age} years` : ''} />
-            <R label="Height" value={`${profile.heightFeet || '-'} ft ${profile.heightInches || 0} in`} />
+            <R label="Height" value={formatHeight(profile.heightFeet, profile.heightInches)} />
             <R label="Marital Status" value={profile.maritalStatus || ''} />
 
             <H>Religion &amp; Family</H>
@@ -248,12 +249,13 @@ const ProfileViewModal = ({ profile, isAdmin, onClose }) => {
             <R label="Caste" value={profile.caste || 'Mala'} />
             <R label="Sub Caste" value={profile.subCaste || ''} />
             <R label="Siblings" value={profile.siblingsCount} />
+            <R label="Native Place" value={profile.nativePlace || ''} />
             <R label="Father's Name" value={profile.fatherName || ''} />
             <R label="Father Occupation" value={profile.fatherOccupation || ''} />
+            <R label="Father Native" value={profile.fatherNativePlace || ''} />
             <R label="Mother's Name" value={profile.motherName || ''} />
             <R label="Mother Occupation" value={profile.motherOccupation || ''} />
-            <R label="Native Place" value={profile.nativePlace || ''} />
-            <R label="Father's Native Place" value={profile.fatherNativePlace || ''} />
+            <R label="Mother Native" value={profile.motherNativePlace || ''} />
 
             <H>Education &amp; Career</H>
             <R label="Education" value={profile.highestEducation || ''} />

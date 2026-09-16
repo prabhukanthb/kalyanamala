@@ -267,6 +267,11 @@ const profileValidation = [
     .notEmpty()
     .withMessage("Father's native place is required"),
 
+  body('motherNativePlace')
+    .trim()
+    .notEmpty()
+    .withMessage("Mother's native place is required"),
+
   body('aboutMe')
     .trim()
     .notEmpty()
@@ -387,6 +392,7 @@ router.post('/', authMiddleware, profileValidation, async (req, res) => {
 
       nativePlace: safeString(req.body.nativePlace),
       fatherNativePlace: safeString(req.body.fatherNativePlace),
+      motherNativePlace: safeString(req.body.motherNativePlace),
 
       photos: Array.isArray(req.body.photos) ? req.body.photos.slice(0, 3) : [],
       aboutMe: safeString(req.body.aboutMe),
@@ -531,6 +537,7 @@ router.post(
 
         nativePlace: safeString(req.body.nativePlace),
         fatherNativePlace: safeString(req.body.fatherNativePlace),
+        motherNativePlace: safeString(req.body.motherNativePlace),
 
         photos: Array.isArray(req.body.photos) ? req.body.photos.slice(0, 3) : [],
         aboutMe: safeString(req.body.aboutMe),
@@ -654,6 +661,7 @@ router.put('/me', authMiddleware, profileValidation, async (req, res) => {
 
     profile.nativePlace = safeString(req.body.nativePlace);
     profile.fatherNativePlace = safeString(req.body.fatherNativePlace);
+    profile.motherNativePlace = safeString(req.body.motherNativePlace);
 
     profile.aboutMe = safeString(req.body.aboutMe);
     profile.partnerRequirement = safeString(req.body.partnerRequirement);
@@ -839,6 +847,7 @@ router.put('/:id', authMiddleware, requireRole('admin', 'subadmin'), async (req,
 
     if (req.body.nativePlace !== undefined) profile.nativePlace = safeString(req.body.nativePlace);
     if (req.body.fatherNativePlace !== undefined) profile.fatherNativePlace = safeString(req.body.fatherNativePlace);
+    if (req.body.motherNativePlace !== undefined) profile.motherNativePlace = safeString(req.body.motherNativePlace);
 
     if (req.body.aboutMe !== undefined) profile.aboutMe = safeString(req.body.aboutMe);
     if (req.body.partnerRequirement !== undefined) profile.partnerRequirement = safeString(req.body.partnerRequirement);

@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatHeight, prettyLabel } from '../utils/profileFormHelpers';
+import { formatHeight, prettyLabel, fullName } from '../utils/profileFormHelpers';
 import ProfileDownloadCard from './ProfileDownloadCard';
 
 const API_BASE = 'https://kalyanamala-backend-production.up.railway.app';
@@ -65,8 +65,8 @@ const ProfileViewModal = ({ profile, isAdmin, onClose }) => {
   const age = calcAge(profile.dateOfBirth);
 
   const name = editing || acctOk
-    ? `${acct.firstName} ${acct.lastName}`.trim()
-    : `${profile.firstName || profile.userId?.firstName || ''} ${profile.lastName || profile.userId?.lastName || ''}`.trim();
+    ? [acct.firstName, acct.lastName, acct.surname].filter(Boolean).join(' ')
+    : fullName(profile);
 
   const saveAccount = async () => {
     setSavingAcct(true);

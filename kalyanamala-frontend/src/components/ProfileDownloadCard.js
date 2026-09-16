@@ -160,7 +160,7 @@ const ProfileDownloadCard = ({ profile, onClose }) => {
 
           <div style={{
             position: 'relative', zIndex: 3, display: 'flex',
-            alignItems: 'stretch', padding: '20px 24px 8px', gap: 18
+            alignItems: 'stretch', padding: '20px 20px 8px 24px', gap: 16
           }}>
             <div style={{ width: '65%', minWidth: 0, boxSizing: 'border-box' }}>
               <div style={{ fontSize: 26, fontWeight: 700, color: MAROON, marginBottom: 12 }}>
@@ -176,71 +176,71 @@ const ProfileDownloadCard = ({ profile, onClose }) => {
                 <F label="Caste" value={profile.caste || 'Mala'} />
                 <F label="City & State" value={place(profile.currentAddress)} />
               </Group>
+
+              <div style={{ display: 'flex', gap: 20, marginTop: 16 }}>
+                <Group title="Father">
+                  <F label="Name" value={profile.fatherName || ''} />
+                  <F label="Occupation" value={profile.fatherOccupation || ''} />
+                  <F label="Native" value={profile.fatherNativePlace || ''} />
+                </Group>
+                <Group title="Mother">
+                  <F label="Name" value={profile.motherName || ''} />
+                  <F label="Occupation" value={profile.motherOccupation || ''} />
+                  <F label="Native" value={profile.motherNativePlace || ''} />
+                </Group>
+              </div>
+
+              <div style={{ display: 'flex', gap: 20, marginTop: 16 }}>
+                <Group title="Education & Career">
+                  <F label="Education" value={profile.highestEducation || ''} />
+                  <F label="Occupation" value={profile.occupation || ''} />
+                  <F label="Company" value={profile.companyName || ''} />
+                  <F label="Annual Income" value={profile.income ? `${profile.incomeCurrency || 'INR'} ${profile.income}` : ''} />
+                </Group>
+                <Group title="Places">
+                  <F label="Native Place" value={profile.nativePlace || ''} />
+                  <F label="Siblings" value={profile.siblingsCount === 0 || profile.siblingsCount ? String(profile.siblingsCount) : ''} />
+                  <F label="Present City" value={place(profile.presentAddress)} />
+                </Group>
+              </div>
+
+              <div style={{ marginTop: 16 }}>
+                <Group title="Preference & About">
+                  <F label="Preferred Match" value={prettyLabel(profile.preferredMatch)} />
+                  <div style={{ fontSize: 13, fontWeight: 700, marginTop: 10, color: MAROON, letterSpacing: 0.4 }}>
+                    Partner Requirement
+                  </div>
+                  <div style={{ fontSize: 14, lineHeight: 1.65, marginTop: 4, color: INK }}>
+                    {profile.partnerRequirement || ''}
+                  </div>
+                  {profile.aboutMe ? (
+                    <div style={{ fontSize: 14, lineHeight: 1.65, marginTop: 10, color: INK }}>
+                      {profile.aboutMe}
+                    </div>
+                  ) : null}
+                </Group>
+              </div>
             </div>
 
             <div style={{
               width: '35%', boxSizing: 'border-box',
-              display: 'flex'
+              display: 'flex', paddingBottom: 12
             }}>
               {img ? (
                 <img src={img} alt={name} crossOrigin="anonymous"
                   style={{
-                    width: '100%', height: '100%', minHeight: 280, objectFit: 'cover',
+                    width: '100%', height: '100%', minHeight: 420, objectFit: 'cover',
                     border: `5px solid ${GOLD}`, borderRadius: 6, background: '#eee',
                     display: 'block'
                   }} />
               ) : (
                 <div style={{
-                  width: '100%', minHeight: 280, border: `5px solid ${GOLD}`,
+                  width: '100%', minHeight: 420, border: `5px solid ${GOLD}`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   color: '#b89', background: '#f6eee4', borderRadius: 6
                 }}>No photo</div>
               )}
             </div>
-          </div>
-
-          <div style={{ position: 'relative', zIndex: 3, display: 'flex', gap: 28, padding: '8px 24px 16px' }}>
-            <Group title="Father">
-              <F label="Name" value={profile.fatherName || ''} />
-              <F label="Occupation" value={profile.fatherOccupation || ''} />
-              <F label="Native" value={profile.fatherNativePlace || ''} />
-            </Group>
-            <Group title="Mother">
-              <F label="Name" value={profile.motherName || ''} />
-              <F label="Occupation" value={profile.motherOccupation || ''} />
-              <F label="Native" value={profile.motherNativePlace || ''} />
-            </Group>
-          </div>
-
-          <div style={{ position: 'relative', zIndex: 3, display: 'flex', gap: 28, padding: '0 24px 16px' }}>
-            <Group title="Education & Career">
-              <F label="Education" value={profile.highestEducation || ''} />
-              <F label="Occupation" value={profile.occupation || ''} />
-              <F label="Company" value={profile.companyName || ''} />
-              <F label="Annual Income" value={profile.income ? `${profile.incomeCurrency || 'INR'} ${profile.income}` : ''} />
-            </Group>
-            <Group title="Places">
-              <F label="Native Place" value={profile.nativePlace || ''} />
-              <F label="Siblings" value={profile.siblingsCount === 0 || profile.siblingsCount ? String(profile.siblingsCount) : ''} />
-              <F label="Present City" value={place(profile.presentAddress)} />
-            </Group>
-          </div>
-
-          <div style={{ position: 'relative', zIndex: 3, padding: '0 24px 22px' }}>
-            <Group title="Preference & About">
-              <F label="Preferred Match" value={prettyLabel(profile.preferredMatch)} />
-              <div style={{ fontSize: 13, fontWeight: 700, marginTop: 10, color: MAROON, letterSpacing: 0.4 }}>
-                Partner Requirement
-              </div>
-              <div style={{ fontSize: 14, lineHeight: 1.65, marginTop: 4, color: INK }}>
-                {profile.partnerRequirement || ''}
-              </div>
-              {profile.aboutMe ? (
-                <div style={{ fontSize: 14, lineHeight: 1.65, marginTop: 10, color: INK }}>
-                  {profile.aboutMe}
-                </div>
-              ) : null}
-            </Group>
           </div>
 
           <div style={{

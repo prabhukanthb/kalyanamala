@@ -6,11 +6,12 @@ const BRAND = 'Kalyanamala';
 const BRAND_LINE = 'New Kalyanamala Matrimony';
 const CONTACT_PERSON = 'B. John Ratnam';
 const CONTACT_PHONE = '9440545049';
-const WATERMARK_OPACITY = 0.07;
+const WATERMARK_OPACITY = 0.1;
 const MAROON = '#8B1E3F';
 const GOLD = '#C9A227';
 const CREAM = '#FFF8F0';
 const INK = '#2C1810';
+const CARD_WIDTH = 850;
 
 const photoSrc = (p) => (!p ? '' : typeof p === 'string' ? p : p.url || p.imageUrl || '');
 
@@ -39,7 +40,7 @@ const F = ({ label, value }) => (
 );
 
 const Group = ({ title, children }) => (
-  <div style={{ flex: '1 1 280px', minWidth: 250 }}>
+  <div style={{ flex: '1 1 280px', minWidth: 0 }}>
     <div style={{
       fontSize: 12, fontWeight: 700, letterSpacing: 1.4, textTransform: 'uppercase',
       color: MAROON, borderBottom: `2px solid ${GOLD}`, paddingBottom: 5, marginBottom: 8
@@ -76,7 +77,7 @@ const ProfileDownloadCard = ({ profile, onClose }) => {
     }
   };
 
-  const watermarkRows = Array.from({ length: 14 });
+  const watermarkRows = Array.from({ length: 18 });
 
   return (
     <div
@@ -104,7 +105,7 @@ const ProfileDownloadCard = ({ profile, onClose }) => {
         </div>
 
         <div ref={cardRef} style={{
-          width: 850, background: CREAM, position: 'relative', overflow: 'hidden',
+          width: CARD_WIDTH, background: CREAM, position: 'relative', overflow: 'hidden',
           fontFamily: 'Georgia, "Times New Roman", serif',
           border: `3px solid ${GOLD}`, boxSizing: 'border-box'
         }}>
@@ -113,14 +114,20 @@ const ProfileDownloadCard = ({ profile, onClose }) => {
           }} />
 
           <div style={{
-            position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 2,
-            opacity: WATERMARK_OPACITY, transform: 'rotate(-30deg) scale(1.6)',
+            position: 'absolute', inset: '-20%', pointerEvents: 'none', zIndex: 2,
+            opacity: WATERMARK_OPACITY, transform: 'rotate(-18deg)',
             transformOrigin: 'center'
           }}>
             {watermarkRows.map((_, r) => (
-              <div key={r} style={{ display: 'flex', gap: 40, whiteSpace: 'nowrap', margin: '28px 0' }}>
-                {Array.from({ length: 5 }).map((__, c) => (
-                  <span key={c} style={{ fontSize: 30, fontWeight: 700, color: MAROON }}>{BRAND_LINE}</span>
+              <div key={r} style={{
+                display: 'flex', gap: 56, whiteSpace: 'nowrap',
+                margin: '22px 0', justifyContent: r % 2 ? 'flex-end' : 'flex-start'
+              }}>
+                {Array.from({ length: 6 }).map((__, c) => (
+                  <span key={c} style={{
+                    fontSize: 13, fontWeight: 600, color: MAROON,
+                    letterSpacing: 0.6
+                  }}>{BRAND_LINE}</span>
                 ))}
               </div>
             ))}
@@ -151,20 +158,16 @@ const ProfileDownloadCard = ({ profile, onClose }) => {
 
           <div style={{ height: 4, background: GOLD, position: 'relative', zIndex: 3 }} />
 
-          <div style={{ position: 'relative', zIndex: 3, display: 'flex', gap: 24, padding: '22px 28px 8px' }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 26, fontWeight: 700, color: MAROON, marginBottom: 4 }}>{name || 'Member'}</div>
-              <div style={{ fontSize: 14, color: '#7a5a48', marginBottom: 14 }}>
-                {[
-                  prettyLabel(profile.gender),
-                  age ? `${age} years` : '',
-                  formatHeight(profile.heightFeet, profile.heightInches),
-                  prettyLabel(profile.maritalStatus),
-                  profile.caste || 'Mala'
-                ].filter(Boolean).join('  ·  ')}
+          <div style={{
+            position: 'relative', zIndex: 3, display: 'flex',
+            alignItems: 'stretch', padding: '20px 24px 8px', gap: 18
+          }}>
+            <div style={{ width: '65%', minWidth: 0, boxSizing: 'border-box' }}>
+              <div style={{ fontSize: 26, fontWeight: 700, color: MAROON, marginBottom: 12 }}>
+                {name || 'Member'}
               </div>
               <Group title="Basic Details">
-                <F label="Full Name" value={name} />
+                <F label="Gender" value={prettyLabel(profile.gender)} />
                 <F label="Date of Birth" value={profile.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString('en-GB') : ''} />
                 <F label="Age" value={age ? `${age} years` : ''} />
                 <F label="Height" value={formatHeight(profile.heightFeet, profile.heightInches)} />
@@ -175,16 +178,20 @@ const ProfileDownloadCard = ({ profile, onClose }) => {
               </Group>
             </div>
 
-            <div style={{ flex: '0 0 248px' }}>
+            <div style={{
+              width: '35%', boxSizing: 'border-box',
+              display: 'flex'
+            }}>
               {img ? (
                 <img src={img} alt={name} crossOrigin="anonymous"
                   style={{
-                    width: 248, height: 310, objectFit: 'cover',
-                    border: `5px solid ${GOLD}`, borderRadius: 6, background: '#eee'
+                    width: '100%', height: '100%', minHeight: 280, objectFit: 'cover',
+                    border: `5px solid ${GOLD}`, borderRadius: 6, background: '#eee',
+                    display: 'block'
                   }} />
               ) : (
                 <div style={{
-                  width: 248, height: 310, border: `5px solid ${GOLD}`,
+                  width: '100%', minHeight: 280, border: `5px solid ${GOLD}`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   color: '#b89', background: '#f6eee4', borderRadius: 6
                 }}>No photo</div>
@@ -192,7 +199,7 @@ const ProfileDownloadCard = ({ profile, onClose }) => {
             </div>
           </div>
 
-          <div style={{ position: 'relative', zIndex: 3, display: 'flex', gap: 28, padding: '8px 28px 16px' }}>
+          <div style={{ position: 'relative', zIndex: 3, display: 'flex', gap: 28, padding: '8px 24px 16px' }}>
             <Group title="Father">
               <F label="Name" value={profile.fatherName || ''} />
               <F label="Occupation" value={profile.fatherOccupation || ''} />
@@ -205,7 +212,7 @@ const ProfileDownloadCard = ({ profile, onClose }) => {
             </Group>
           </div>
 
-          <div style={{ position: 'relative', zIndex: 3, display: 'flex', gap: 28, padding: '0 28px 16px' }}>
+          <div style={{ position: 'relative', zIndex: 3, display: 'flex', gap: 28, padding: '0 24px 16px' }}>
             <Group title="Education & Career">
               <F label="Education" value={profile.highestEducation || ''} />
               <F label="Occupation" value={profile.occupation || ''} />
@@ -219,7 +226,7 @@ const ProfileDownloadCard = ({ profile, onClose }) => {
             </Group>
           </div>
 
-          <div style={{ position: 'relative', zIndex: 3, padding: '0 28px 22px' }}>
+          <div style={{ position: 'relative', zIndex: 3, padding: '0 24px 22px' }}>
             <Group title="Preference & About">
               <F label="Preferred Match" value={prettyLabel(profile.preferredMatch)} />
               <div style={{ fontSize: 13, fontWeight: 700, marginTop: 10, color: MAROON, letterSpacing: 0.4 }}>

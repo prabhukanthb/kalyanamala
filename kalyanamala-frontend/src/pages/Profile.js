@@ -271,6 +271,8 @@ const Profile = () => {
     };
 
     loadProfile();
+    // user object identity changes after setUser; only reload when login or those account fields change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, navigate, user?.alternativePhone, user?.surname]);
 
   useEffect(() => {

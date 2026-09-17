@@ -14,7 +14,7 @@ const SiteFooter = () => (
     <div className="footer-grid">
       <div>
         <strong>{BRAND}</strong>
-        <p>Exclusive mala matrimony, owned and operated by {ORG}. Main branch in Vijayawada. Twenty years of careful introductions for candidates and their parents.</p>
+        <p>Exclusive mala matrimony, owned and operated by {ORG}. Main office at Manohara Apartments, Machavaram, Vijayawada, with branches across Andhra Pradesh, Bangalore, Chennai and the United States.</p>
       </div>
       <div>
         <strong>Explore</strong>

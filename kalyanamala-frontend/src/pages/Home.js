@@ -5,7 +5,8 @@ import { AuthContext } from '../context/AuthContext';
 import { API_ORIGIN } from '../services/apiBase';
 import { fullName } from '../utils/profileFormHelpers';
 import {
-  BRANCH_ADDRESS,
+  BRANCH_ADDRESS_LINES,
+  BRANCHES,
   BRAND,
   CITIES,
   EMAIL,
@@ -148,8 +149,8 @@ const Home = () => {
           <h1>{H1}</h1>
           <p className="lede">
             {BRAND} is exclusive to the Mala community, owned and operated by {ORG}.
-            For twenty years we have helped candidates and their parents find a match
-            with dignity, privacy and a person they can call.
+            For twenty years our Vijayawada office has helped the candidate and the
+            parents who stand with them find a match with dignity, privacy and a person they can call.
           </p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 22 }}>
             <Link to={registerPath} className="btn-gold">Register Free</Link>
@@ -288,10 +289,11 @@ const Home = () => {
           <div className="tag-grid">
             {[
               ['City · Vijayawada', 'city=Vijayawada'],
-              ['City · Hyderabad', 'city=Hyderabad'],
+              ['City · Guntur', 'city=Guntur'],
+              ['City · Bangalore', 'city=Bangalore'],
               ['Profession', 'q=engineer'],
               ['Education', 'q=btech'],
-              ['NRI', 'city=NRI'],
+              ['NRI · United States', 'city=NRI'],
               ['Second marriage', 'q=second']
             ].map(([label, q]) => (
               <Link key={label} className="tag" to={`/browse?${q}`}>{label}</Link>
@@ -366,8 +368,9 @@ const Home = () => {
         <div className="section">
           <h2>About {ORG}</h2>
           <p className="sub">
-            {ORG} has served Mala families from its main branch in Vijayawada for {YEARS_OF_SERVICE} years.
-            {BRAND} is the matrimonial service of the samstha — not a marketplace for every community,
+            {ORG} has served Mala families from its main branch in Vijayawada for {YEARS_OF_SERVICE} years,
+            with offices across Andhra Pradesh, Bangalore, Chennai and the United States.
+            {' '}{BRAND} is the matrimonial service of the samstha — not a marketplace for every community,
             and not a casual dating site. Elders, working professionals and NRIs use the same careful process:
             a verified biodata, a conversation with our team, and an introduction only when both families wish it.
             We exist so that a Mala bride or groom, and the parents who stand with them, can search with trust.
@@ -421,10 +424,13 @@ const Home = () => {
       <section className="band-cream" id="contact">
         <div className="section">
           <h2>Vijayawada main branch</h2>
+          <p className="sub">Walk in at Manohara Apartments, Machavaram. Call or WhatsApp {HELPLINE_DISPLAY} from any of our branches.</p>
           <div className="branch-grid">
             <div>
               <p><strong>{ORG}</strong></p>
-              <p>{BRANCH_ADDRESS}</p>
+              {BRANCH_ADDRESS_LINES.map((line) => (
+                <p key={line} style={{ margin: '0 0 4px' }}>{line}</p>
+              ))}
               <p>Phone: <a href={HELPLINE_TEL}>{HELPLINE_DISPLAY}</a></p>
               <p>WhatsApp: <a href={WHATSAPP_HREF} target="_blank" rel="noreferrer">{HELPLINE_DISPLAY}</a></p>
               <p>Email: <a href={`mailto:${EMAIL}`}>{EMAIL}</a></p>
@@ -438,6 +444,19 @@ const Home = () => {
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
             />
+          </div>
+          <h3 className="branch-heading">Our branches</h3>
+          <p className="sub">Andhra Pradesh, Bangalore, Chennai and the United States — one samstha, the same careful process.</p>
+          <div className="branch-list">
+            {BRANCHES.map((b) => (
+              <Link
+                key={b.city}
+                className={b.main ? 'branch-pill main' : 'branch-pill'}
+                to={`/browse?${b.query}`}
+              >
+                {b.city}{b.main ? ' · Main' : ''}
+              </Link>
+            ))}
           </div>
         </div>
       </section>

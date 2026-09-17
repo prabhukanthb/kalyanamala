@@ -111,10 +111,18 @@ const BrowseProfiles = () => {
         if (!blob.includes(q)) return false;
       }
       if (city) {
-        const pc = `${p.currentAddress?.city || ''} ${p.presentAddress?.city || ''}`.toLowerCase();
+        const pc = `${p.currentAddress?.city || ''} ${p.presentAddress?.city || ''} ${p.jobLocation || ''}`.toLowerCase();
         if (city === 'nri') {
-          if (!/nri|abroad|usa|uk|canada|dubai|singapore/.test(pc + ' ' + (p.jobLocation || '').toLowerCase())) return false;
-        } else if (!pc.includes(city)) return false;
+          if (!/nri|abroad|usa|uk|canada|dubai|singapore|united states|america/.test(pc)) return false;
+        } else {
+          const aliases = {
+            bangalore: ['bangalore', 'bengaluru'],
+            rajahmundry: ['rajahmundry', 'rajamundry'],
+            visakhapatnam: ['visakhapatnam', 'vishakapatnam', 'vizag']
+          };
+          const needles = aliases[city] || [city];
+          if (!needles.some((n) => pc.includes(n))) return false;
+        }
       }
       if (community && p.religion && p.religion !== community) return false;
       if (looking === 'bride' && p.gender && p.gender !== 'female') return false;

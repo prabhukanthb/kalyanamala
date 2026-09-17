@@ -23,8 +23,20 @@ import { Privacy, Terms, Refund } from './pages/LegalPages';
 import './site.css';
 
 function AppContent() {
-  const { isAuthenticated, user } = useContext(AuthContext);
+  const { isAuthenticated, user, loading } = useContext(AuthContext);
   const isAdmin = user?.role === 'admin' || user?.role === 'subadmin';
+
+  if (loading) {
+    return (
+      <div className="site-shell">
+        <SiteHeader />
+        <main className="site-main">
+          <div className="section">Loading…</div>
+        </main>
+        <SiteFooter />
+      </div>
+    );
+  }
 
   return (
     <div className="site-shell">

@@ -10,10 +10,13 @@ import {
   parseHeightValue,
   pinLookupColor,
   pinLookupMessage,
-  stateOptions
+  stateOptions,
+  profileToForm,
+  toIncomeRupees
 } from '../../utils/profileFormHelpers';
+import { API_ORIGIN } from '../../services/apiBase';
 
-const API_BASE = 'https://kalyanamala-backend-production.up.railway.app';
+const API_BASE = API_ORIGIN;
 
 const southIndianStates = stateOptions(false);
 
@@ -167,7 +170,6 @@ const EditProfile = () => {
     presentState: '',
     presentCountry: 'India',
     presentPinCode: '',
-    nativePlace: '',
     fatherNativePlace: '',
     motherNativePlace: '',
     aboutMe: '',
@@ -189,49 +191,7 @@ const EditProfile = () => {
 
         const p = res.data.profile;
 
-        setForm({
-          gender: p.gender || '',
-          dateOfBirth: p.dateOfBirth ? new Date(p.dateOfBirth).toISOString().split('T')[0] : '',
-          heightFeet: p.heightFeet?.toString() || '',
-          heightInches: p.heightInches?.toString() || '',
-          height: heightToValue(p.heightFeet, p.heightInches),
-          religion: p.religion || '',
-          subCaste: p.subCaste || '',
-          siblingsCount: p.siblingsCount?.toString() || '',
-          maritalStatus: p.maritalStatus || '',
-          fatherName: p.fatherName || '',
-          fatherOccupation: p.fatherOccupation || '',
-          motherName: p.motherName || '',
-          motherOccupation: p.motherOccupation || '',
-          highestEducation: p.highestEducation || '',
-          fieldOfStudy: p.fieldOfStudy || '',
-          college: p.college || '',
-          occupation: p.occupation || '',
-          employmentType: p.employmentType || '',
-          companyName: p.companyName || '',
-          jobTitle: p.jobTitle || '',
-          jobLocation: p.jobLocation || '',
-          industry: p.industry || '',
-          income: p.income?.toString() || '',
-          streetName: p.currentAddress?.streetName || '',
-          city: p.currentAddress?.city || '',
-          state: p.currentAddress?.state || '',
-          country: p.currentAddress?.country || 'India',
-          pinCode: p.currentAddress?.pinCode || '',
-          presentStreetName: p.presentAddress?.streetName || '',
-          presentCity: p.presentAddress?.city || '',
-          presentState: p.presentAddress?.state || '',
-          presentCountry: p.presentAddress?.country || 'India',
-          presentPinCode: p.presentAddress?.pinCode || '',
-          nativePlace: p.nativePlace || '',
-          fatherNativePlace: p.fatherNativePlace || '',
-          motherNativePlace: p.motherNativePlace || '',
-          aboutMe: p.aboutMe || '',
-          partnerRequirement: p.partnerRequirement || '',
-          preferredMatch: p.preferredMatch || 'any_religion',
-          showInSearch: p.showInSearch || false,
-          approvalStatus: p.approvalStatus || 'pending'
-        });
+        setForm(profileToForm(p));
       } catch (err) {
         setError(err.response?.data?.message || err.response?.data?.error || 'Failed to load profile');
       } finally {
@@ -345,7 +305,7 @@ const EditProfile = () => {
       jobTitle: form.jobTitle,
       jobLocation: form.jobLocation,
       industry: form.industry,
-      income: Number(form.income),
+      income: toIncomeRupees(form.income),
       incomeCurrency: 'INR',
       currentAddress: {
         streetName: form.streetName,
@@ -361,7 +321,6 @@ const EditProfile = () => {
         country: form.presentCountry,
         pinCode: form.presentPinCode
       },
-      nativePlace: form.nativePlace,
       aboutMe: form.aboutMe,
       partnerRequirement: form.partnerRequirement,
       preferredMatch: form.preferredMatch,
@@ -479,9 +438,6 @@ const EditProfile = () => {
             ))}
           </select>
 
-          <label htmlFor="nativePlace">Native Place</label>
-          <input id="nativePlace" name="nativePlace" value={form.nativePlace} onChange={handleChange} style={inputStyle} required />
-
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
             <div style={{ flex: '1 1 280px' }}>
               <label htmlFor="fatherName">Father’s Name</label>
@@ -546,8 +502,8 @@ const EditProfile = () => {
           <label htmlFor="industry">Industry</label>
           <input id="industry" name="industry" value={form.industry} onChange={handleChange} style={inputStyle} required />
 
-          <label htmlFor="income">Income</label>
-          <input id="income" type="number" name="income" value={form.income} onChange={handleChange} style={inputStyle} required />
+          <label htmlFor="income">Annual Income (lacs)</label>
+          <input id="income" type="number" name="income" value={form.income} onChange={handleChange} style={inputStyle} min="0" step="0.1" placeholder="e.g. 12 or 12.5" required />
         </div>
 
         <div style={sectionStyle}>

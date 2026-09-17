@@ -10,10 +10,12 @@ import {
   parseHeightValue,
   pinLookupColor,
   pinLookupMessage,
-  stateOptions
+  stateOptions,
+  toIncomeRupees
 } from '../../utils/profileFormHelpers';
+import { API_ORIGIN } from '../../services/apiBase';
 
-const API_BASE = 'https://kalyanamala-backend-production.up.railway.app';
+const API_BASE = API_ORIGIN;
 
 const initialForm = {
   firstName: '',
@@ -54,7 +56,6 @@ const initialForm = {
   presentState: '',
   presentCountry: 'India',
   presentPinCode: '',
-  nativePlace: '',
   fatherNativePlace: '',
   motherNativePlace: '',
   aboutMe: '',
@@ -273,6 +274,7 @@ const CreateProfile = () => {
     const payload = {
       firstName: form.firstName,
       lastName: form.lastName,
+      surname: form.lastName,
       email: form.email,
       phone: form.phone,
       alternativePhone: form.alternativePhone || undefined,
@@ -300,7 +302,7 @@ const CreateProfile = () => {
       jobTitle: form.jobTitle,
       jobLocation: form.jobLocation,
       industry: form.industry,
-      income: Number(form.income),
+      income: toIncomeRupees(form.income),
       incomeCurrency: 'INR',
       currentAddress: {
         streetName: form.streetName,
@@ -316,7 +318,6 @@ const CreateProfile = () => {
         country: form.presentCountry,
         pinCode: form.presentPinCode
       },
-      nativePlace: form.nativePlace,
       aboutMe: form.aboutMe,
       partnerRequirement: form.partnerRequirement,
       preferredMatch: form.preferredMatch,
@@ -406,7 +407,7 @@ const CreateProfile = () => {
           />
           {fieldErrors.firstName && <div style={{ color: 'red' }}>{fieldErrors.firstName}</div>}
 
-          <label htmlFor="lastName">Last Name</label>
+          <label htmlFor="lastName">Surname</label>
           <input
             id="lastName"
             name="lastName"
@@ -588,17 +589,6 @@ const CreateProfile = () => {
             ))}
           </select>
           {fieldErrors.maritalStatus && <div style={{ color: 'red' }}>{fieldErrors.maritalStatus}</div>}
-
-          <label htmlFor="nativePlace">Native Place</label>
-          <input
-            id="nativePlace"
-            name="nativePlace"
-            value={form.nativePlace}
-            onChange={handleChange}
-            style={inputStyle}
-            required
-          />
-          {fieldErrors.nativePlace && <div style={{ color: 'red' }}>{fieldErrors.nativePlace}</div>}
 
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
             <div style={{ flex: '1 1 280px' }}>
@@ -784,7 +774,7 @@ const CreateProfile = () => {
           />
           {fieldErrors.industry && <div style={{ color: 'red' }}>{fieldErrors.industry}</div>}
 
-          <label htmlFor="income">Income</label>
+          <label htmlFor="income">Annual Income (lacs)</label>
           <input
             id="income"
             type="number"
@@ -792,6 +782,9 @@ const CreateProfile = () => {
             value={form.income}
             onChange={handleChange}
             style={inputStyle}
+            min="0"
+            step="0.1"
+            placeholder="e.g. 12 or 12.5"
             required
           />
           {fieldErrors.income && <div style={{ color: 'red' }}>{fieldErrors.income}</div>}

@@ -33,10 +33,10 @@ const profile = {
   }
 };
 
-test('PNG card shows native places and partner requirement without contact PII', () => {
+test('PNG card shows family natives and partner requirement without contact PII', () => {
   render(<ProfileDownloadCard profile={profile} onClose={() => {}} />);
 
-  expect(screen.getByText('Guntur')).toBeInTheDocument();
+  expect(screen.queryByText('Guntur')).not.toBeInTheDocument();
   expect(screen.getByText('Vijayawada')).toBeInTheDocument();
   expect(screen.getByText('Ongole')).toBeInTheDocument();
   expect(screen.getByText('Looking for a kind partner from the Mala community.')).toBeInTheDocument();

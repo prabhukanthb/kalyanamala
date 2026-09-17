@@ -12,10 +12,16 @@ import {
   parseHeightValue,
   pinLookupColor,
   pinLookupMessage,
-  stateOptions
+  stateOptions,
+  profileToForm,
+  toIncomeRupees,
+  displaySurname,
+  displayAlternativePhone,
+  fullName as personName
 } from '../utils/profileFormHelpers';
+import { API_ORIGIN } from '../services/apiBase';
 
-const API_BASE = 'https://kalyanamala-backend-production.up.railway.app';
+const API_BASE = API_ORIGIN;
 
 const CLOUD_NAME = 'bh4nvmuf';
 const UPLOAD_PRESET = 'kalyanamala';
@@ -30,7 +36,7 @@ const initialForm = {
   industry: '', income: '', incomeCurrency: 'INR',
   streetName: '', city: '', state: '', country: 'India', pinCode: '',
   presentStreetName: '', presentCity: '', presentState: '', presentCountry: 'India', presentPinCode: '',
-  nativePlace: '', fatherNativePlace: '', motherNativePlace: '',
+  fatherNativePlace: '', motherNativePlace: '',
   aboutMe: '', partnerRequirement: '', preferredMatch: 'any_religion', caste: 'Mala',
   alternativePhone: ''
 };
@@ -239,53 +245,11 @@ const Profile = () => {
         });
 
         const p = res.data.profile;
+        if (res.data.user && setUser) setUser(res.data.user);
         setProfile(p);
         setPhotos(Array.isArray(p.photos) ? p.photos : []);
-
-        setForm({
-          gender: p.gender || '',
-          dateOfBirth: p.dateOfBirth ? new Date(p.dateOfBirth).toISOString().split('T')[0] : '',
-          heightFeet: p.heightFeet?.toString() || '',
-          heightInches: p.heightInches?.toString() || '',
-          height: heightToValue(p.heightFeet, p.heightInches),
-          religion: p.religion || '',
-          subCaste: p.subCaste || '',
-          siblingsCount: p.siblingsCount?.toString() || '',
-          maritalStatus: p.maritalStatus || '',
-          fatherName: p.fatherName || '',
-          fatherOccupation: p.fatherOccupation || '',
-          motherName: p.motherName || '',
-          motherOccupation: p.motherOccupation || '',
-          highestEducation: p.highestEducation || '',
-          fieldOfStudy: p.fieldOfStudy || '',
-          college: p.college || '',
-          occupation: p.occupation || '',
-          employmentType: p.employmentType || '',
-          companyName: p.companyName || '',
-          jobTitle: p.jobTitle || '',
-          jobLocation: p.jobLocation || '',
-          industry: p.industry || '',
-          income: p.income?.toString() || '',
-          incomeCurrency: p.incomeCurrency || 'INR',
-          streetName: p.currentAddress?.streetName || '',
-          city: p.currentAddress?.city || '',
-          state: p.currentAddress?.state || '',
-          country: p.currentAddress?.country || 'India',
-          pinCode: p.currentAddress?.pinCode || '',
-          presentStreetName: p.presentAddress?.streetName || '',
-          presentCity: p.presentAddress?.city || '',
-          presentState: p.presentAddress?.state || '',
-          presentCountry: p.presentAddress?.country || 'India',
-          presentPinCode: p.presentAddress?.pinCode || '',
-          nativePlace: p.nativePlace || '',
-          fatherNativePlace: p.fatherNativePlace || '',
-          motherNativePlace: p.motherNativePlace || '',
-          aboutMe: p.aboutMe || '',
-          partnerRequirement: p.partnerRequirement || '',
-          preferredMatch: p.preferredMatch || 'any_religion',
-          caste: 'Mala',
-          alternativePhone: user?.alternativePhone || p.userId?.alternativePhone || ''
-        });
+        const alt = displayAlternativePhone(res.data.user || user, p);
+        setForm(profileToForm(p, { user: res.data.user || user, alternativePhone: alt }));
 
         setMode('view');
       } catch (err) {
@@ -307,7 +271,7 @@ const Profile = () => {
     };
 
     loadProfile();
-  }, [token, navigate, user?.alternativePhone]);
+  }, [token, navigate, user?.alternativePhone, user?.surname]);
 
   useEffect(() => {
     if (activePhoto > photos.length - 1) setActivePhoto(0);
@@ -530,7 +494,7 @@ const Profile = () => {
           else if (msg.includes('present country')) mapped.presentCountry = item;
           else if (msg.includes('present pin')) mapped.presentPinCode = item;
           else if (msg.includes("father's native") || msg.includes('father native')) mapped.fatherNativePlace = item;
-          else if (msg.includes('native place')) mapped.nativePlace = item;
+          else if (msg.includes("mother's native") || msg.includes('mother native')) mapped.motherNativePlace = item;
           else if (msg.includes('about me')) mapped.aboutMe = item;
           else if (msg.includes('partner requirement')) mapped.partnerRequirement = item;
           else if (msg.includes('photo')) mapped.photos = item;
@@ -587,7 +551,7 @@ const Profile = () => {
       jobTitle: form.jobTitle,
       jobLocation: form.jobLocation,
       industry: form.industry,
-      income: Number(form.income),
+      income: toIncomeRupees(form.income),
       incomeCurrency: 'INR',
       currentAddress: {
         streetName: form.streetName,
@@ -603,12 +567,12 @@ const Profile = () => {
         country: form.presentCountry,
         pinCode: form.presentPinCode
       },
-      nativePlace: form.nativePlace,
       aboutMe: form.aboutMe,
       partnerRequirement: form.partnerRequirement,
       preferredMatch: form.preferredMatch,
       caste: 'Mala',
-      photos: normalisePhotos(photos)
+      photos: normalisePhotos(photos),
+      alternativePhone: form.alternativePhone || ''
     };
 
     setSaving(true);
@@ -626,14 +590,26 @@ const Profile = () => {
       }
 
       const saved = res.data.profile;
+      const savedUser = res.data.user;
+      if (savedUser && setUser) setUser(savedUser);
       setProfile(saved);
       setPhotos(Array.isArray(saved.photos) ? saved.photos : photos);
-      const acctRes = await axios.put(`${API_BASE}/api/auth/account`, {
-        alternativePhone: form.alternativePhone || ''
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (acctRes.data?.user && setUser) setUser(acctRes.data.user);
+      setForm(profileToForm(saved, {
+        user: savedUser || user,
+        alternativePhone: savedUser?.alternativePhone || form.alternativePhone
+      }));
+      try {
+        const acctRes = await axios.put(`${API_BASE}/api/auth/account`, {
+          alternativePhone: form.alternativePhone || ''
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (acctRes.data?.user && setUser) setUser(acctRes.data.user);
+      } catch (acctErr) {
+        if (acctErr.response?.status !== 404) {
+          throw acctErr;
+        }
+      }
       setMode('view');
       setError('');
       setFieldErrors({});
@@ -650,7 +626,11 @@ const Profile = () => {
     return <div style={{ padding: '40px' }}>Loading profile...</div>;
   }
 
-const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
+    const fullName = personName({
+      firstName: user?.firstName,
+      lastName: user?.lastName,
+      surname: displaySurname(user)
+    }) || `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
   const getStyle = (fieldName) => (fieldErrors[fieldName] ? errorFieldStyle : inputStyle);
 
   const ordered = normalisePhotos(photos);
@@ -799,10 +779,10 @@ const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
 
             <div style={detailColStyle}>
               <h4 style={{ ...detailGroupTitle, marginTop: 0 }}>Contact</h4>
-              <Row label="Surname" value={user?.surname || ''} />
+              <Row label="Surname" value={displaySurname(user, profile)} />
               <Row label="Email" value={user?.email || ''} />
               <Row label="Phone" value={user?.phone || profile.userId?.phone || ''} />
-              <Row label="Alternate Mobile" value={user?.alternativePhone || profile.userId?.alternativePhone || form.alternativePhone || ''} />
+              <Row label="Alternate Mobile" value={displayAlternativePhone(user, profile) || form.alternativePhone || ''} />
 
               <h4 style={detailGroupTitle}>Basic Details</h4>
               <Row label="Gender" value={profile.gender || ''} />
@@ -816,7 +796,6 @@ const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
               <Row label="Caste" value={profile.caste || 'Mala'} />
               <Row label="Sub Caste" value={profile.subCaste || ''} />
               <Row label="Siblings" value={profile.siblingsCount} />
-              <Row label="Native Place" value={profile.nativePlace || ''} />
               <Row label="Father's Name" value={profile.fatherName || ''} />
               <Row label="Father Occupation" value={profile.fatherOccupation || ''} />
               <Row label="Father Native" value={profile.fatherNativePlace || ''} />
@@ -985,10 +964,6 @@ const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
             </select>
             {fieldErrors.maritalStatus && <div style={{ color: 'red' }}>{fieldErrors.maritalStatus}</div>}
 
-            <label htmlFor="nativePlace">Native Place</label>
-            <input id="nativePlace" name="nativePlace" value={form.nativePlace} onChange={handleChange} style={getStyle('nativePlace')} required />
-            {fieldErrors.nativePlace && <div style={{ color: 'red' }}>{fieldErrors.nativePlace}</div>}
-
             <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
               <div style={{ flex: '1 1 280px' }}>
                 <label htmlFor="fatherName">Father’s Name</label>
@@ -1064,8 +1039,9 @@ const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
             <input id="industry" name="industry" value={form.industry} onChange={handleChange} style={getStyle('industry')} required />
             {fieldErrors.industry && <div style={{ color: 'red' }}>{fieldErrors.industry}</div>}
 
-            <label htmlFor="income">Income</label>
-            <input id="income" type="number" name="income" value={form.income} onChange={handleChange} style={getStyle('income')} required />
+            <label htmlFor="income">Annual Income (lacs)</label>
+            <input id="income" type="number" name="income" value={form.income} onChange={handleChange} style={getStyle('income')} min="0" step="0.1" placeholder="e.g. 12 or 12.5" required />
+            <div style={{ color: '#666', fontSize: 12, marginTop: -8, marginBottom: 12 }}>Enter 12 for 12 lacs, or 12.5 for 12.5 lacs.</div>
             {fieldErrors.income && <div style={{ color: 'red' }}>{fieldErrors.income}</div>}
           </div>
 

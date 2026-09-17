@@ -3,7 +3,9 @@ import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 
-const API_BASE = 'https://kalyanamala-backend-production.up.railway.app';
+import { API_ORIGIN } from '../../services/apiBase';
+
+const API_BASE = API_ORIGIN;
 
 const EditUser = () => {
   const { id } = useParams();

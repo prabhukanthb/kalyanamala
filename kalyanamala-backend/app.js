@@ -47,11 +47,11 @@ app.get('/health', (req, res) => {
 });
 
 app.get('/api/version', (req, res) => {
-res.json({ success: true, version: '1.0.2-admin-create' });
-
+  res.json({ success: true, version: '1.0.3-profile-persist' });
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/auth', authRoutes);
 app.use('/api/profiles', profileRoutes);
 app.use('/api/admin', adminRoutes);
 

@@ -8,7 +8,7 @@ const Register = () => {
     phone: '',
     alternativePhone: '',
     firstName: '',
-    lastName: '',
+    surname: '',
     password: '',
     confirmPassword: ''
   });
@@ -36,14 +36,21 @@ const Register = () => {
       return;
     }
 
+    if ((formData.surname || '').trim().length < 2) {
+      setError('Surname must be at least 2 characters');
+      return;
+    }
+
     setLoading(true);
     try {
+      const surname = formData.surname.trim();
       const payload = {
         email: formData.email,
         phone: formData.phone,
         alternativePhone: formData.alternativePhone || undefined,
         firstName: formData.firstName,
-        lastName: formData.lastName,
+        lastName: surname,
+        surname,
         password: formData.password,
         confirmPassword: formData.confirmPassword
       };
@@ -82,8 +89,8 @@ const Register = () => {
         <label>First Name</label>
         <input style={input} name="firstName" value={formData.firstName} onChange={handleChange} />
 
-        <label>Last Name</label>
-        <input style={input} name="lastName" value={formData.lastName} onChange={handleChange} />
+        <label>Surname</label>
+        <input style={input} name="surname" value={formData.surname} onChange={handleChange} />
 
         <label>Password</label>
         <input style={input} type="password" name="password" value={formData.password} onChange={handleChange} />

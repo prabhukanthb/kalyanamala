@@ -62,7 +62,7 @@ const NavBar = () => {
           <>
             <span style={{ marginRight: '20px' }}>
               Hi, {user?.firstName}
-              {user?.surname ? ` ${user.surname}` : ''}!
+              {user?.surname || user?.lastName ? ` ${user.surname || user.lastName}` : ''}!
             </span>
 
 <Link

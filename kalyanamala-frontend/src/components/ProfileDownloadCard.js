@@ -198,9 +198,9 @@ const ProfileDownloadCard = ({ profile, onClose }) => {
                   <F label="Annual Income" value={formatIncome(profile.income)} />
                 </Group>
                 <Group title="Places">
-                  <F label="Native Place" value={profile.nativePlace || ''} />
                   <F label="Siblings" value={profile.siblingsCount === 0 || profile.siblingsCount ? String(profile.siblingsCount) : ''} />
                   <F label="Present City" value={place(profile.presentAddress)} />
+                  <F label="Current City" value={place(profile.currentAddress)} />
                 </Group>
               </div>
 

@@ -5,7 +5,9 @@ import ProfileDownloadCard from '../components/ProfileDownloadCard';
 import ProfileViewModal from '../components/ProfileViewModal';
 import { fullName } from '../utils/profileFormHelpers';
 
-const API_BASE = 'https://kalyanamala-backend-production.up.railway.app';
+import { API_ORIGIN } from '../services/apiBase';
+
+const API_BASE = API_ORIGIN;
 
 const calcAge = (dob) => {
   if (!dob) return null;

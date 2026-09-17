@@ -6,7 +6,9 @@ import ProfileViewModal from '../components/ProfileViewModal';
 import ProfileDownloadCard from '../components/ProfileDownloadCard';
 import { prettyLabel } from '../utils/profileFormHelpers';
 
-const API_BASE = 'https://kalyanamala-backend-production.up.railway.app';
+import { API_ORIGIN } from '../services/apiBase';
+
+const API_BASE = API_ORIGIN;
 
 const STATUS_FILTERS = ['all', 'pending', 'approved', 'rejected', 'deleted'];
 

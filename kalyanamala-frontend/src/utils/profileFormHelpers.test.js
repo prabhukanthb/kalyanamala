@@ -9,6 +9,11 @@ import {
   prettyLabel,
   fullName,
   formatIncome,
+  displaySurname,
+  displayAlternativePhone,
+  toIncomeRupees,
+  incomeToLacsInput,
+  profileToForm,
   stateOptions
 } from './profileFormHelpers';
 
@@ -67,6 +72,7 @@ test('prettyLabel and fullName format profile fields for display', () => {
   expect(prettyLabel('male')).toBe('Male');
   expect(prettyLabel('any_religion')).toBe('Any Religion');
   expect(fullName({ firstName: 'Sita', userId: { lastName: 'Devi', surname: 'Reddy' } })).toBe('Sita Devi Reddy');
+  expect(fullName({ firstName: 'Ravi', userId: { lastName: 'Reddy', surname: 'Reddy' } })).toBe('Ravi Reddy');
 });
 
 test('formatIncome shows lacs instead of a rupee amount with zeros', () => {
@@ -74,6 +80,34 @@ test('formatIncome shows lacs instead of a rupee amount with zeros', () => {
   expect(formatIncome(1250000)).toBe('12.5 lacs');
   expect(formatIncome(100000)).toBe('1 lac');
   expect(formatIncome(800000)).toBe('8 lacs');
+  expect(formatIncome(12)).toBe('12 lacs');
   expect(formatIncome(0)).toBe('');
   expect(formatIncome('')).toBe('');
+});
+
+test('surname falls back to last name and alternate mobile is read from the user or profile', () => {
+  expect(displaySurname({ lastName: 'Reddy' })).toBe('Reddy');
+  expect(displaySurname({ surname: 'Naidu', lastName: 'Kumar' })).toBe('Naidu');
+  expect(displayAlternativePhone({ alternativePhone: '9123456789' })).toBe('9123456789');
+  expect(displayAlternativePhone({}, { userId: { alternativePhone: '9000000000' } })).toBe('9000000000');
+  expect(toIncomeRupees(12.5)).toBe(1250000);
+  expect(incomeToLacsInput(1200000)).toBe('12');
+});
+
+test('profileToForm reloads parent natives, present address, income and partner requirement', () => {
+  const form = profileToForm({
+    income: 1250000,
+    fatherNativePlace: 'Vijayawada',
+    motherNativePlace: 'Ongole',
+    presentAddress: { streetName: 'MG Road', city: 'Hyderabad', state: 'Telangana', country: 'India', pinCode: '500001' },
+    partnerRequirement: 'Kind partner',
+    userId: { alternativePhone: '9123456789', surname: 'Reddy' }
+  });
+  expect(form.income).toBe('12.5');
+  expect(form.fatherNativePlace).toBe('Vijayawada');
+  expect(form.motherNativePlace).toBe('Ongole');
+  expect(form.presentCity).toBe('Hyderabad');
+  expect(form.presentPinCode).toBe('500001');
+  expect(form.partnerRequirement).toBe('Kind partner');
+  expect(form.alternativePhone).toBe('9123456789');
 });

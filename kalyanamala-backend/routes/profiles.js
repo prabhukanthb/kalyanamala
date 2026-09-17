@@ -6,8 +6,9 @@ const { body, validationResult } = require('express-validator');
 
 const Profile = require('../models/Profile');
 const User = require('../models/User');
-const { defaultPassword } = require('../utils/defaultPassword');
+const { defaultPassword, publicUser } = require('../utils/defaultPassword');
 const { generateProfileId, buildProfileSearchFilter } = require('../utils/profileId');
+const { toIncomeRupees } = require('../utils/income');
 
 // ==========================================
 // AUTH MIDDLEWARE
@@ -59,6 +60,81 @@ const requireRole = (...roles) => {
 const safeString = (value) => {
   if (value === null || value === undefined) return '';
   return String(value).trim();
+};
+
+const addressFrom = (bodyAddr, fallbackCountry = 'India') => ({
+  streetName: safeString(bodyAddr?.streetName),
+  city: safeString(bodyAddr?.city),
+  state: safeString(bodyAddr?.state),
+  country: safeString(bodyAddr?.country || fallbackCountry),
+  pinCode: safeString(bodyAddr?.pinCode)
+});
+
+const profileFieldsFromBody = (body) => ({
+  gender: body.gender,
+  dateOfBirth: body.dateOfBirth,
+  heightFeet: Number(body.heightFeet),
+  heightInches: Number(body.heightInches),
+  religion: body.religion,
+  caste: 'Mala',
+  subCaste: body.subCaste,
+  siblingsCount: Number(body.siblingsCount || 0),
+  maritalStatus: body.maritalStatus,
+  fatherName: safeString(body.fatherName),
+  fatherOccupation: safeString(body.fatherOccupation),
+  fatherNativePlace: safeString(body.fatherNativePlace),
+  motherName: safeString(body.motherName),
+  motherOccupation: safeString(body.motherOccupation),
+  motherNativePlace: safeString(body.motherNativePlace),
+  highestEducation: body.highestEducation,
+  fieldOfStudy: safeString(body.fieldOfStudy),
+  college: safeString(body.college),
+  occupation: safeString(body.occupation),
+  employmentType: safeString(body.employmentType),
+  companyName: safeString(body.companyName),
+  jobTitle: safeString(body.jobTitle),
+  jobLocation: safeString(body.jobLocation),
+  industry: safeString(body.industry),
+  income: toIncomeRupees(body.income),
+  incomeCurrency: 'INR',
+  currentAddress: addressFrom(body.currentAddress),
+  presentAddress: addressFrom(body.presentAddress),
+  nativePlace: safeString(body.nativePlace),
+  aboutMe: safeString(body.aboutMe),
+  partnerRequirement: safeString(body.partnerRequirement),
+  preferredMatch: safeString(body.preferredMatch || 'any_religion')
+});
+
+const applyProfileFields = (profile, body) => {
+  const fields = profileFieldsFromBody(body);
+  if (Array.isArray(body.photos)) {
+    fields.photos = body.photos.slice(0, 3);
+  }
+  Object.assign(profile, fields);
+  profile.markModified('currentAddress');
+  profile.markModified('presentAddress');
+};
+
+const populateProfileUser = (profileId) => (
+  Profile.findById(profileId)
+    .populate('userId', 'email firstName lastName surname phone alternativePhone role status')
+);
+
+const syncUserAccount = async (userId, body) => {
+  const user = await User.findById(userId);
+  if (!user) return null;
+  if (body.alternativePhone !== undefined) {
+    const alt = String(body.alternativePhone || '').trim();
+    user.alternativePhone = alt || null;
+  }
+  if (body.surname !== undefined) {
+    user.surname = String(body.surname || '').trim();
+  }
+  if (body.lastName !== undefined) {
+    user.lastName = String(body.lastName || user.surname || '').trim();
+  }
+  await user.save();
+  return user;
 };
 
 const getAge = (dateOfBirth) => {
@@ -260,9 +336,8 @@ const profileValidation = [
     .withMessage('Present pin code must be 6 digits'),
 
   body('nativePlace')
-    .trim()
-    .notEmpty()
-    .withMessage('Native place is required'),
+    .optional({ checkFalsy: true })
+    .trim(),
 
   body('fatherNativePlace')
     .trim()
@@ -283,7 +358,12 @@ const profileValidation = [
     .trim()
     .notEmpty()
     .isLength({ max: 1000 })
-    .withMessage('Partner requirement is required (max 1000 characters)')
+    .withMessage('Partner requirement is required (max 1000 characters)'),
+
+  body('alternativePhone')
+    .optional({ checkFalsy: true })
+    .matches(/^[0-9]{10}$/)
+    .withMessage('Alternative phone must be 10 digits')
 ];
 
 // ==========================================
@@ -322,72 +402,24 @@ router.post('/', authMiddleware, profileValidation, async (req, res) => {
     }
 
     const profileId = await generateProfileId(req.body.gender);
+    const savedUser = await syncUserAccount(req.userId, req.body);
 
     const profile = await Profile.create({
       profileId,
       userId: req.userId,
-
-      gender: req.body.gender,
-      dateOfBirth: req.body.dateOfBirth,
-      heightFeet: Number(req.body.heightFeet),
-      heightInches: Number(req.body.heightInches),
-
-      religion: req.body.religion,
-      caste: 'Mala',
-      subCaste: req.body.subCaste,
-      siblingsCount: Number(req.body.siblingsCount),
-      maritalStatus: req.body.maritalStatus,
-
-      fatherName: safeString(req.body.fatherName),
-      fatherOccupation: safeString(req.body.fatherOccupation),
-      motherName: safeString(req.body.motherName),
-      motherOccupation: safeString(req.body.motherOccupation),
-
-      highestEducation: req.body.highestEducation,
-      fieldOfStudy: safeString(req.body.fieldOfStudy),
-      college: safeString(req.body.college),
-      occupation: safeString(req.body.occupation),
-      employmentType: safeString(req.body.employmentType),
-      companyName: safeString(req.body.companyName),
-      jobTitle: safeString(req.body.jobTitle),
-      jobLocation: safeString(req.body.jobLocation),
-      industry: safeString(req.body.industry),
-      income: Number(req.body.income),
-      incomeCurrency: 'INR',
-
-      currentAddress: {
-        streetName: safeString(req.body.currentAddress?.streetName),
-        city: safeString(req.body.currentAddress?.city),
-        state: safeString(req.body.currentAddress?.state),
-        country: safeString(req.body.currentAddress?.country || 'India'),
-        pinCode: safeString(req.body.currentAddress?.pinCode)
-      },
-
-      presentAddress: {
-        streetName: safeString(req.body.presentAddress?.streetName),
-        city: safeString(req.body.presentAddress?.city),
-        state: safeString(req.body.presentAddress?.state),
-        country: safeString(req.body.presentAddress?.country || 'India'),
-        pinCode: safeString(req.body.presentAddress?.pinCode)
-      },
-
-      nativePlace: safeString(req.body.nativePlace),
-      fatherNativePlace: safeString(req.body.fatherNativePlace),
-      motherNativePlace: safeString(req.body.motherNativePlace),
-
+      ...profileFieldsFromBody(req.body),
       photos: Array.isArray(req.body.photos) ? req.body.photos.slice(0, 3) : [],
-      aboutMe: safeString(req.body.aboutMe),
-      partnerRequirement: safeString(req.body.partnerRequirement),
-      preferredMatch: safeString(req.body.preferredMatch || 'any_religion'),
-
       approvalStatus: 'pending',
       showInSearch: false
     });
 
+    const populated = await populateProfileUser(profile._id);
+
     return res.status(201).json({
       success: true,
       message: 'Profile created successfully',
-      profile
+      profile: populated,
+      user: publicUser(savedUser || user)
     });
   } catch (error) {
     console.error('Create profile error:', error);
@@ -406,7 +438,13 @@ const adminCreateValidation = [
   body('phone').matches(/^[0-9]{10}$/).withMessage('Phone must be 10 digits'),
   body('alternativePhone').optional({ checkFalsy: true }).matches(/^[0-9]{10}$/).withMessage('Alternative phone must be 10 digits'),
   body('firstName').trim().notEmpty().withMessage('First name is required'),
-  body('lastName').trim().notEmpty().withMessage('Last name is required'),
+  body('lastName').optional({ checkFalsy: true }).trim().isLength({ min: 2 }).withMessage('Last name is required'),
+  body('surname').optional({ checkFalsy: true }).trim().isLength({ min: 2 }).withMessage('Surname is required'),
+  body().custom((_, { req }) => {
+    const surname = String(req.body.surname || req.body.lastName || '').trim();
+    if (surname.length < 2) throw new Error('Surname must be at least 2 characters');
+    return true;
+  }),
   ...profileValidation
 ];
 
@@ -428,7 +466,9 @@ router.post(
         });
       }
 
-      const { email, phone, alternativePhone, firstName, lastName } = req.body;
+      const { email, phone, alternativePhone, firstName, lastName, surname } = req.body;
+      const resolvedSurname = String(surname || lastName || '').trim();
+      const resolvedLastName = String(lastName || surname || '').trim();
 
       const existingUser = await User.findOne({ $or: [{email},{phone}] });
       if (existingUser) {
@@ -452,7 +492,8 @@ router.post(
         phone,
         alternativePhone: alternativePhone ? String(alternativePhone).trim() : null,
         firstName: safeString(firstName),
-        lastName: safeString(lastName),
+        lastName: resolvedLastName,
+        surname: resolvedSurname,
         password: hashedPassword,
         role: 'user',
         status: 'active',
@@ -465,70 +506,21 @@ router.post(
       const profile = await Profile.create({
         profileId,
         userId: newUser._id,
-
-        gender: req.body.gender,
-        dateOfBirth: req.body.dateOfBirth,
-        heightFeet: Number(req.body.heightFeet),
-        heightInches: Number(req.body.heightInches),
-
-        religion: req.body.religion,
-        caste: 'Mala',
-        subCaste: req.body.subCaste,
-        siblingsCount: Number(req.body.siblingsCount),
-        maritalStatus: req.body.maritalStatus,
-
-        fatherName: safeString(req.body.fatherName),
-        fatherOccupation: safeString(req.body.fatherOccupation),
-        motherName: safeString(req.body.motherName),
-        motherOccupation: safeString(req.body.motherOccupation),
-
-        highestEducation: req.body.highestEducation,
-        fieldOfStudy: safeString(req.body.fieldOfStudy),
-        college: safeString(req.body.college),
-        occupation: safeString(req.body.occupation),
-        employmentType: safeString(req.body.employmentType),
-        companyName: safeString(req.body.companyName),
-        jobTitle: safeString(req.body.jobTitle),
-        jobLocation: safeString(req.body.jobLocation),
-        industry: safeString(req.body.industry),
-        income: Number(req.body.income),
-        incomeCurrency: 'INR',
-
-        currentAddress: {
-          streetName: safeString(req.body.currentAddress?.streetName),
-          city: safeString(req.body.currentAddress?.city),
-          state: safeString(req.body.currentAddress?.state),
-          country: safeString(req.body.currentAddress?.country || 'India'),
-          pinCode: safeString(req.body.currentAddress?.pinCode)
-        },
-
-        presentAddress: {
-          streetName: safeString(req.body.presentAddress?.streetName),
-          city: safeString(req.body.presentAddress?.city),
-          state: safeString(req.body.presentAddress?.state),
-          country: safeString(req.body.presentAddress?.country || 'India'),
-          pinCode: safeString(req.body.presentAddress?.pinCode)
-        },
-
-        nativePlace: safeString(req.body.nativePlace),
-        fatherNativePlace: safeString(req.body.fatherNativePlace),
-        motherNativePlace: safeString(req.body.motherNativePlace),
-
+        ...profileFieldsFromBody(req.body),
         photos: Array.isArray(req.body.photos) ? req.body.photos.slice(0, 3) : [],
-        aboutMe: safeString(req.body.aboutMe),
-        partnerRequirement: safeString(req.body.partnerRequirement),
-        preferredMatch: safeString(req.body.preferredMatch || 'any_religion'),
-
         createdByAdmin: req.userId,
         approvalStatus: 'pending',
         showInSearch: false
       });
 
+      const populated = await populateProfileUser(profile._id);
+
       return res.status(201).json({
         success: true,
         message: 'User and profile created successfully',
         tempPassword,
-        profile
+        profile: populated,
+        user: publicUser(newUser)
       });
     } catch (error) {
       console.error('Admin create profile error:', error);
@@ -555,9 +547,11 @@ router.get('/me', authMiddleware, async (req, res) => {
       });
     }
 
+    const account = await User.findById(req.userId);
     return res.status(200).json({
       success: true,
-      profile
+      profile,
+      user: account ? publicUser(account) : undefined
     });
   } catch (error) {
     return res.status(500).json({
@@ -590,68 +584,16 @@ router.put('/me', authMiddleware, profileValidation, async (req, res) => {
       });
     }
 
-    profile.gender = req.body.gender;
-    profile.dateOfBirth = req.body.dateOfBirth;
-    profile.heightFeet = Number(req.body.heightFeet);
-    profile.heightInches = Number(req.body.heightInches);
-
-    profile.religion = req.body.religion;
-    profile.caste = 'Mala';
-    profile.subCaste = req.body.subCaste;
-    profile.siblingsCount = Number(req.body.siblingsCount);
-    profile.maritalStatus = req.body.maritalStatus;
-
-    profile.fatherName = safeString(req.body.fatherName);
-    profile.fatherOccupation = safeString(req.body.fatherOccupation);
-    profile.motherName = safeString(req.body.motherName);
-    profile.motherOccupation = safeString(req.body.motherOccupation);
-
-    profile.highestEducation = req.body.highestEducation;
-    profile.fieldOfStudy = safeString(req.body.fieldOfStudy);
-    profile.college = safeString(req.body.college);
-    profile.occupation = safeString(req.body.occupation);
-    profile.employmentType = safeString(req.body.employmentType);
-    profile.companyName = safeString(req.body.companyName);
-    profile.jobTitle = safeString(req.body.jobTitle);
-    profile.jobLocation = safeString(req.body.jobLocation);
-    profile.industry = safeString(req.body.industry);
-    profile.income = Number(req.body.income);
-    profile.incomeCurrency = 'INR';
-
-    profile.currentAddress = {
-      streetName: safeString(req.body.currentAddress?.streetName),
-      city: safeString(req.body.currentAddress?.city),
-      state: safeString(req.body.currentAddress?.state),
-      country: safeString(req.body.currentAddress?.country || 'India'),
-      pinCode: safeString(req.body.currentAddress?.pinCode)
-    };
-
-    profile.presentAddress = {
-      streetName: safeString(req.body.presentAddress?.streetName),
-      city: safeString(req.body.presentAddress?.city),
-      state: safeString(req.body.presentAddress?.state),
-      country: safeString(req.body.presentAddress?.country || 'India'),
-      pinCode: safeString(req.body.presentAddress?.pinCode)
-    };
-
-    profile.nativePlace = safeString(req.body.nativePlace);
-    profile.fatherNativePlace = safeString(req.body.fatherNativePlace);
-    profile.motherNativePlace = safeString(req.body.motherNativePlace);
-
-    profile.aboutMe = safeString(req.body.aboutMe);
-    profile.partnerRequirement = safeString(req.body.partnerRequirement);
-    profile.preferredMatch = safeString(req.body.preferredMatch || 'any_religion');
-
-    if (req.body.photos !== undefined && Array.isArray(req.body.photos)) {
-      profile.photos = req.body.photos.slice(0, 3);
-    }
-
+    applyProfileFields(profile, req.body);
     await profile.save();
+    const savedUser = await syncUserAccount(req.userId, req.body);
+    const populated = await populateProfileUser(profile._id);
 
     return res.status(200).json({
       success: true,
       message: 'Profile updated successfully',
-      profile
+      profile: populated,
+      user: savedUser ? publicUser(savedUser) : undefined
     });
   } catch (error) {
     console.error('Update profile error:', error);
@@ -805,7 +747,7 @@ router.put('/:id', authMiddleware, requireRole('admin', 'subadmin'), async (req,
     if (req.body.jobTitle !== undefined) profile.jobTitle = safeString(req.body.jobTitle);
     if (req.body.jobLocation !== undefined) profile.jobLocation = safeString(req.body.jobLocation);
     if (req.body.industry !== undefined) profile.industry = safeString(req.body.industry);
-    if (req.body.income !== undefined) profile.income = Number(req.body.income);
+    if (req.body.income !== undefined) profile.income = toIncomeRupees(req.body.income);
 
     if (req.body.currentAddress) {
       profile.currentAddress = {
@@ -825,6 +767,7 @@ router.put('/:id', authMiddleware, requireRole('admin', 'subadmin'), async (req,
         country: safeString(req.body.presentAddress.country ?? profile.presentAddress?.country),
         pinCode: safeString(req.body.presentAddress.pinCode ?? profile.presentAddress?.pinCode)
       };
+      profile.markModified('presentAddress');
     }
 
     if (req.body.nativePlace !== undefined) profile.nativePlace = safeString(req.body.nativePlace);

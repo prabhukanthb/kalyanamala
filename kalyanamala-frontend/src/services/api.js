@@ -1,8 +1,7 @@
 import axios from 'axios';
+import { API_BASE_URL, API_ORIGIN } from './apiBase';
 
-const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL ||
-  'https://kalyanamala-backend-production.up.railway.app/api';
+export { API_BASE_URL, API_ORIGIN };
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,

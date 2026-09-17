@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
+import { Link, useSearchParams } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import ProfileDownloadCard from '../components/ProfileDownloadCard';
 import ProfileViewModal from '../components/ProfileViewModal';
@@ -33,12 +34,13 @@ const ghostBtn = { ...btn, background: '#fff', color: '#8B1E3F', border: '1px so
 
 const BrowseProfiles = () => {
   const { token, user, loading: authLoading } = useContext(AuthContext);
+  const [params] = useSearchParams();
 
   const [me,setMe] = useState(null);
   const [results,setResults] = useState([]);
   const [busy,setBusy] = useState(true);
   const [error,setError] = useState('');
-  const [query,setQuery] = useState('');
+  const [query,setQuery] = useState(params.get('q') || '');
   const [searchBy,setSearchBy] = useState('name');
   const [selected,setSelected] = useState(null);   // download modal
   const [viewing,setViewing] = useState(null);     // view modal
@@ -93,23 +95,55 @@ const BrowseProfiles = () => {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return visible;
+    const city = (params.get('city') || '').toLowerCase();
+    const community = params.get('community') || '';
+    const looking = params.get('looking') || '';
+    const ageMin = Number(params.get('ageMin') || 0);
+    const ageMax = Number(params.get('ageMax') || 0);
 
     return visible.filter((p) => {
-      if (searchBy === 'id') {
-        const id = String(p.profileId || '');
-        return id.toLowerCase().includes(q);
+      if (searchBy === 'id' && q) {
+        return String(p.profileId || '').toLowerCase().includes(q);
       }
-      const name = `${p.firstName || p.userId?.firstName || ''} ${p.lastName || p.userId?.lastName || ''} ${p.userId?.surname || ''}`.toLowerCase();
-      return name.includes(q);
+      if (q && searchBy !== 'id') {
+        const name = `${p.firstName || p.userId?.firstName || ''} ${p.lastName || p.userId?.lastName || ''} ${p.userId?.surname || ''}`.toLowerCase();
+        const blob = `${name} ${p.occupation || ''} ${p.highestEducation || ''} ${p.maritalStatus || ''}`.toLowerCase();
+        if (!blob.includes(q)) return false;
+      }
+      if (city) {
+        const pc = `${p.currentAddress?.city || ''} ${p.presentAddress?.city || ''}`.toLowerCase();
+        if (city === 'nri') {
+          if (!/nri|abroad|usa|uk|canada|dubai|singapore/.test(pc + ' ' + (p.jobLocation || '').toLowerCase())) return false;
+        } else if (!pc.includes(city)) return false;
+      }
+      if (community && p.religion && p.religion !== community) return false;
+      if (looking === 'bride' && p.gender && p.gender !== 'female') return false;
+      if (looking === 'groom' && p.gender && p.gender !== 'male') return false;
+      const age = calcAge(p.dateOfBirth);
+      if (ageMin && age && age < ageMin) return false;
+      if (ageMax && age && age > ageMax) return false;
+      return true;
     });
-  }, [visible, query, searchBy]);
+  }, [visible, query, searchBy, params]);
 
   if (authLoading || busy) return <div style={{ padding: 40 }}>Loading profiles…</div>;
 
+  if (!token) {
+    return (
+      <div style={{ maxWidth: 640, margin: '40px auto', padding: 20 }}>
+        <div style={{ marginBottom: 8, fontSize: 13, letterSpacing: 1.4, textTransform: 'uppercase', color: '#C9A227' }}>New Kalyanamala</div>
+        <h2 style={{ fontFamily: 'Georgia, serif', color: '#8B1E3F' }}>Search Profiles</h2>
+        <p>Register free to view verified Mala matches. Parents may create the login. Phone numbers stay private.</p>
+        <Link to="/register" style={{ ...btn, display: 'inline-block', textDecoration: 'none' }}>Register Free</Link>
+        {' '}
+        <Link to="/login" style={{ ...ghostBtn, display: 'inline-block', textDecoration: 'none' }}>Login</Link>
+      </div>
+    );
+  }
+
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 20px 48px' }}>
-      <div style={{ marginBottom: 8, fontSize: 13, letterSpacing: 1.4, textTransform: 'uppercase', color: '#C9A227' }}>Kalyanamala</div>
+      <div style={{ marginBottom: 8, fontSize: 13, letterSpacing: 1.4, textTransform: 'uppercase', color: '#C9A227' }}>New Kalyanamala</div>
       <h2 style={{ fontFamily: 'Georgia, serif', fontSize: 32, color: '#8B1E3F', margin: '0 0 8px' }}>Browse profiles</h2>
 
       {error && (

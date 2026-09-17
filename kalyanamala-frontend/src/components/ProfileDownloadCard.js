@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import html2canvas from 'html2canvas';
 import { formatHeight, fullName, prettyLabel, formatIncome } from '../utils/profileFormHelpers';
 
-const BRAND = 'Kalyanamala';
+const BRAND = 'New Kalyanamala';
 const BRAND_LINE = 'New Kalyanamala Matrimony';
 const CONTACT_PERSON = 'B. John Ratnam';
 const CONTACT_PHONE = '9440545049';

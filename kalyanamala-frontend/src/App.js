@@ -3,13 +3,12 @@ import {
   BrowserRouter as Router,
   Routes,
   Route,
-  Link,
-  Navigate,
-  useNavigate
+  Navigate
 } from 'react-router-dom';
 
 import { AuthProvider, AuthContext } from './context/AuthContext';
-
+import SiteHeader from './components/SiteHeader';
+import SiteFooter from './components/SiteFooter';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -20,155 +19,48 @@ import AdminDashboard from './pages/AdminDashboard';
 import CreateProfile from './pages/admin/CreateProfile';
 import EditProfile from './pages/admin/EditProfile';
 import BrowseProfiles from './pages/BrowseProfiles';
-
-const NavBar = () => {
-  const { isAuthenticated, logout, user } = useContext(AuthContext);
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    await logout();
-    navigate('/');
-  };
-
-  return (
-    <nav
-      style={{
-        background: '#5C1028',
-        color: 'white',
-        padding: '14px 22px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        gap: 12
-      }}
-    >
-      <Link
-        to="/"
-        style={{
-          color: 'white',
-          textDecoration: 'none',
-          fontSize: '22px',
-          fontWeight: 'bold',
-          fontFamily: 'Georgia, serif',
-          letterSpacing: 0.4
-        }}
-      >
-        <span style={{ color: '#C9A227', marginRight: 8 }}>💍</span>
-        Kalyanamala
-      </Link>
-
-      <div>
-        {isAuthenticated ? (
-          <>
-            <span style={{ marginRight: '20px' }}>
-              Hi, {user?.firstName}
-              {user?.surname || user?.lastName ? ` ${user.surname || user.lastName}` : ''}!
-            </span>
-
-<Link
-              to="/browse"
-              style={{ color: 'white', marginRight: '15px', textDecoration: 'none' }}
-            >
-              Browse
-            </Link>
-                
-            <Link
-              to="/profile"
-              style={{ color: 'white', marginRight: '15px', textDecoration: 'none' }}
-            >
-              Profile
-            </Link>
-
-            <Link
-              to="/change-password"
-              style={{ color: 'white', marginRight: '15px', textDecoration: 'none' }}
-            >
-              Password
-            </Link>
-
-            {(user?.role === 'admin' || user?.role === 'subadmin') && (
-              <Link
-                to="/admin"
-                style={{ color: 'white', marginRight: '15px', textDecoration: 'none' }}
-              >
-                Admin
-              </Link>
-            )}
-
-            <button
-              onClick={handleLogout}
-              style={{
-                padding: '8px 15px',
-                backgroundColor: '#C9A227',
-                color: '#5C1028',
-                border: 'none',
-                cursor: 'pointer',
-                borderRadius: '8px',
-                fontWeight: 700
-              }}
-            >
-              Logout
-            </button>
-          </>
-        ) : (
-          <>
-            <Link
-              to="/login"
-              style={{ color: 'white', marginRight: '15px', textDecoration: 'none' }}
-            >
-              Login
-            </Link>
-            <Link to="/register" style={{ color: 'white', textDecoration: 'none' }}>
-              Register
-            </Link>
-          </>
-        )}
-      </div>
-    </nav>
-  );
-};
+import { Privacy, Terms, Refund } from './pages/LegalPages';
+import './site.css';
 
 function AppContent() {
   const { isAuthenticated, user } = useContext(AuthContext);
   const isAdmin = user?.role === 'admin' || user?.role === 'subadmin';
 
   return (
-    <div>
-      <NavBar />
+    <div className="site-shell">
+      <SiteHeader />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-  <Route path="/browse" element={<BrowseProfiles />} />
-
+        <Route path="/browse" element={<BrowseProfiles />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/refund" element={<Refund />} />
         <Route
           path="/profile"
           element={isAuthenticated ? <Profile /> : <Navigate to="/login" replace />}
         />
-
         <Route
           path="/change-password"
           element={isAuthenticated ? <ChangePassword /> : <Navigate to="/login" replace />}
         />
-
         <Route
           path="/admin"
           element={isAuthenticated && isAdmin ? <AdminDashboard /> : <Navigate to="/" replace />}
         />
-
         <Route
           path="/admin/profiles/create"
           element={isAuthenticated && isAdmin ? <CreateProfile /> : <Navigate to="/" replace />}
         />
-
         <Route
           path="/admin/profiles/:id/edit"
           element={isAuthenticated && isAdmin ? <EditProfile /> : <Navigate to="/" replace />}
         />
-
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <SiteFooter />
     </div>
   );
 }

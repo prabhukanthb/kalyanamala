@@ -1,8 +1,6 @@
-import { render, screen } from '@testing-library/react';
-import App from './App';
-
-test('renders learn react link', () => {
-  render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+test('homepage copy lives on the New Kalyanamala site config', () => {
+  const { H1, BRAND } = require('./siteConfig');
+  expect(BRAND).toBe('New Kalyanamala');
+  expect(H1).toMatch(/mala Matrimony/);
+  expect(H1).toMatch(/vijayawada/);
 });

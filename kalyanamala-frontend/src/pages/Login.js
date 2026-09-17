@@ -28,7 +28,7 @@ const Login = () => {
   return (
     <div style={page}>
       <div style={box}>
-      <div style={kicker}>Kalyanamala</div>
+      <div style={kicker}>New Kalyanamala</div>
       <h2 style={title}>Login</h2>
       {error && <div style={errorBox}>{error}</div>}
       <form onSubmit={handleSubmit}>

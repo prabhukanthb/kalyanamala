@@ -29,6 +29,7 @@ function AppContent() {
   return (
     <div className="site-shell">
       <SiteHeader />
+      <main className="site-main">
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
@@ -60,6 +61,7 @@ function AppContent() {
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </main>
       <SiteFooter />
     </div>
   );

@@ -37,7 +37,6 @@ const SiteHeader = () => {
   return (
     <header className="site-header">
       <div className="site-topbar">
-        <div>Vijayawada · Machavaram · {BRAND}</div>
         <div>
           Helpline:{' '}
           <a href={HELPLINE_TEL} aria-label={`Call the Vijayawada helpline ${HELPLINE_DISPLAY}`}>

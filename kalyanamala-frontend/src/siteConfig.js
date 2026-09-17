@@ -2,7 +2,7 @@ export const BRAND = 'New Kalyanamala';
 export const BRAND_LINE = 'New Kalyanamala Matrimony';
 export const ORG = 'Kalyanamala Seva Samstha';
 export const YEARS_OF_SERVICE = 20;
-export const H1 = "Your family's mala Matrimony in vijayawada";
+export const H1 = 'Where families meet, hopes blossom, and lifelong bonds begin.';
 
 export const HELPLINE_DISPLAY = '94405 45049';
 export const HELPLINE_TEL = 'tel:+919440545049';

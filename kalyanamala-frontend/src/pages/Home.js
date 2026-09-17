@@ -10,7 +10,6 @@ import {
   BRAND,
   CITIES,
   EMAIL,
-  H1,
   HELPLINE_DISPLAY,
   HELPLINE_TEL,
   MAP_EMBED,
@@ -145,12 +144,23 @@ const Home = () => {
         style={{ '--hero-image': `url(${HERO_PHOTO})` }}
       >
         <div className="home-hero-inner">
-          <div className="home-kicker">Kalyanamala Seva Samstha · Vijayawada</div>
-          <h1>{H1}</h1>
-          <p className="lede">
-            {BRAND} is exclusive to the Mala community, owned and operated by {ORG}.
-            For twenty years our Vijayawada office has helped the candidate and the
-            parents who stand with them find a match with dignity, privacy and a person they can call.
+          <h1>
+            Where families meet,<br />
+            hopes blossom,<br />
+            and <em>lifelong bonds</em> begin.
+          </h1>
+          <p className="lede verse">
+            For twenty years in <strong>Vijayawada</strong>,{' '}
+            <strong>{BRAND}</strong> has lovingly brought together
+            hearts, hopes, and families within the <strong>Mala community</strong>.
+          </p>
+          <p className="lede verse">
+            Guided by <strong>{ORG}</strong>,
+            we help every candidate and every caring parent
+            discover a meaningful bond—
+            with <em>dignity</em> in every step,
+            <em>privacy</em> in every moment,
+            and a <em>trusted hand</em> to hold throughout the journey.
           </p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 22 }}>
             <Link to={registerPath} className="btn-gold">Register Free</Link>

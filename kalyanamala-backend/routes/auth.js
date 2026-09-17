@@ -58,7 +58,15 @@ const registerValidation = [
   body('phone').matches(/^[0-9]{10}$/).withMessage('Phone must be 10 digits'),
   body('alternativePhone').optional({ checkFalsy: true }).matches(/^[0-9]{10}$/).withMessage('Alternative phone must be 10 digits'),
   body('firstName').trim().notEmpty().isLength({ min: 2 }).withMessage('First name must be at least 2 characters'),
-  body('lastName').trim().notEmpty().isLength({ min: 2 }).withMessage('Last name must be at least 2 characters'),
+  body('lastName').optional({ checkFalsy: true }).trim().isLength({ min: 2 }).withMessage('Last name must be at least 2 characters'),
+  body('surname').optional({ checkFalsy: true }).trim().isLength({ min: 2 }).withMessage('Surname must be at least 2 characters'),
+  body().custom((_, { req }) => {
+    const surname = String(req.body.surname || req.body.lastName || '').trim();
+    if (surname.length < 2) {
+      throw new Error('Surname must be at least 2 characters');
+    }
+    return true;
+  }),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
   body('confirmPassword').custom((value, { req }) => value === req.body.password).withMessage('Passwords do not match')
 ];
@@ -87,9 +95,12 @@ router.post('/register', registerValidation, async (req, res) => {
       alternativePhone,
       firstName,
       lastName,
+      surname,
       password,
       role
     } = req.body;
+    const resolvedSurname = String(surname || lastName || '').trim();
+    const resolvedLastName = String(lastName || surname || '').trim();
 
     const existingUser = await User.findOne({
       $or: [{email},{phone}]
@@ -114,7 +125,8 @@ router.post('/register', registerValidation, async (req, res) => {
       phone,
       alternativePhone: alternativePhone ? String(alternativePhone).trim() : null,
       firstName,
-      lastName,
+      lastName: resolvedLastName,
+      surname: resolvedSurname,
       password: hashedPassword,
       role: role || 'user',
       status: 'active',
@@ -271,6 +283,12 @@ router.put(
 
       if (req.body.alternativePhone !== undefined) {
         user.alternativePhone = req.body.alternativePhone || null;
+      }
+      if (req.body.surname !== undefined) {
+        user.surname = String(req.body.surname || '').trim();
+      }
+      if (req.body.lastName !== undefined) {
+        user.lastName = String(req.body.lastName || user.surname || '').trim();
       }
 
       await user.save();

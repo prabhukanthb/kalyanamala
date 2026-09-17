@@ -37,7 +37,7 @@ const ChangePassword = () => {
   return (
     <div style={page}>
       <div style={box}>
-      <div style={kicker}>Kalyanamala</div>
+      <div style={kicker}>New Kalyanamala</div>
       <h2 style={title}>Change password</h2>
       {error && <div style={errorBox}>{error}</div>}
       {notice && <div style={okBox}>{notice}</div>}

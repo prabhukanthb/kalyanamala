@@ -139,24 +139,111 @@ export const prettyLabel = (value, empty = '') => {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 };
 
+export const displaySurname = (user = {}, profile = {}) => {
+  const nested = profile?.userId && typeof profile.userId === 'object' ? profile.userId : {};
+  return String(
+    user?.surname
+    || profile?.surname
+    || nested.surname
+    || user?.lastName
+    || profile?.lastName
+    || nested.lastName
+    || ''
+  ).trim();
+};
+
+export const displayAlternativePhone = (user = {}, profile = {}) => {
+  const nested = profile?.userId && typeof profile.userId === 'object' ? profile.userId : {};
+  return String(
+    user?.alternativePhone
+    || nested.alternativePhone
+    || profile?.alternativePhone
+    || ''
+  ).trim();
+};
+
 export const fullName = (profile) => {
   const user = profile?.userId && typeof profile.userId === 'object' ? profile.userId : {};
-  return [
-    profile?.firstName || user.firstName,
-    profile?.lastName || user.lastName,
-    profile?.surname || user.surname
-  ].filter(Boolean).join(' ');
+  const first = profile?.firstName || user.firstName;
+  const last = profile?.lastName || user.lastName;
+  const surname = profile?.surname || user.surname;
+  const parts = [first];
+  if (last && last !== first) parts.push(last);
+  if (surname && surname !== last && surname !== first) parts.push(surname);
+  return parts.filter(Boolean).join(' ');
+};
+
+const LACS_THRESHOLD = 10000;
+
+export const toIncomeRupees = (value) => {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  if (n < LACS_THRESHOLD) return Math.round(n * 100000);
+  return Math.round(n);
+};
+
+export const incomeToLacsInput = (income) => {
+  const n = Number(income);
+  if (!Number.isFinite(n) || n <= 0) return '';
+  const lacs = n < LACS_THRESHOLD ? n : n / 100000;
+  const rounded = Math.round(lacs * 10) / 10;
+  if (rounded <= 0) return '';
+  return Number.isInteger(rounded) ? String(rounded) : String(rounded);
 };
 
 export const formatIncome = (income) => {
-  const n = Number(income);
-  if (!Number.isFinite(n) || n <= 0) return '';
-  const lacs = Math.round((n / 100000) * 10) / 10;
-  if (lacs <= 0) return '';
-  const amount = Number.isInteger(lacs) ? String(lacs) : String(lacs);
-  const unit = lacs === 1 ? 'lac' : 'lacs';
+  const amount = incomeToLacsInput(income);
+  if (!amount) return '';
+  const n = Number(amount);
+  const unit = n === 1 ? 'lac' : 'lacs';
   return `${amount} ${unit}`;
 };
+
+export const profileToForm = (p = {}, extra = {}) => ({
+  gender: p.gender || '',
+  dateOfBirth: p.dateOfBirth ? new Date(p.dateOfBirth).toISOString().split('T')[0] : '',
+  heightFeet: p.heightFeet?.toString() || '',
+  heightInches: p.heightInches?.toString() || '',
+  height: heightToValue(p.heightFeet, p.heightInches),
+  religion: p.religion || '',
+  subCaste: p.subCaste || '',
+  siblingsCount: p.siblingsCount === 0 || p.siblingsCount ? String(p.siblingsCount) : '',
+  maritalStatus: p.maritalStatus || '',
+  fatherName: p.fatherName || '',
+  fatherOccupation: p.fatherOccupation || '',
+  motherName: p.motherName || '',
+  motherOccupation: p.motherOccupation || '',
+  highestEducation: p.highestEducation || '',
+  fieldOfStudy: p.fieldOfStudy || '',
+  college: p.college || '',
+  occupation: p.occupation || '',
+  employmentType: p.employmentType || '',
+  companyName: p.companyName || '',
+  jobTitle: p.jobTitle || '',
+  jobLocation: p.jobLocation || '',
+  industry: p.industry || '',
+  income: incomeToLacsInput(p.income),
+  incomeCurrency: p.incomeCurrency || 'INR',
+  streetName: p.currentAddress?.streetName || '',
+  city: p.currentAddress?.city || '',
+  state: p.currentAddress?.state || '',
+  country: p.currentAddress?.country || 'India',
+  pinCode: p.currentAddress?.pinCode || '',
+  presentStreetName: p.presentAddress?.streetName || '',
+  presentCity: p.presentAddress?.city || '',
+  presentState: p.presentAddress?.state || '',
+  presentCountry: p.presentAddress?.country || 'India',
+  presentPinCode: p.presentAddress?.pinCode || '',
+  fatherNativePlace: p.fatherNativePlace || '',
+  motherNativePlace: p.motherNativePlace || '',
+  aboutMe: p.aboutMe || '',
+  partnerRequirement: p.partnerRequirement || '',
+  preferredMatch: p.preferredMatch || 'any_religion',
+  caste: 'Mala',
+  alternativePhone: extra.alternativePhone || displayAlternativePhone(extra.user, p),
+  showInSearch: !!p.showInSearch,
+  approvalStatus: p.approvalStatus || 'pending'
+});
 
 export const lookupIndianPincode = async (pin) => {
   if (!/^[0-9]{6}$/.test(pin)) return null;

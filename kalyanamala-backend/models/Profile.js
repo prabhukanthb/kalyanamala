@@ -452,7 +452,6 @@ profileSchema.methods.calculateCompletion = function () {
     'presentAddress.state',
     'presentAddress.country',
     'presentAddress.pinCode',
-    'nativePlace',
     'fatherNativePlace',
     'motherNativePlace',
     'aboutMe',

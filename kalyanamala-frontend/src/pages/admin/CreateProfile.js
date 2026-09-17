@@ -10,10 +10,13 @@ import {
   parseHeightValue,
   pinLookupColor,
   pinLookupMessage,
-  stateOptions
+  stateOptions,
+  toIncomeRupees
 } from '../../utils/profileFormHelpers';
+import { API_ORIGIN } from '../../services/apiBase';
+import ProfilePhotoFields, { normalisePhotos } from '../../components/ProfilePhotoFields';
 
-const API_BASE = 'https://kalyanamala-backend-production.up.railway.app';
+const API_BASE = API_ORIGIN;
 
 const initialForm = {
   firstName: '',
@@ -54,7 +57,6 @@ const initialForm = {
   presentState: '',
   presentCountry: 'India',
   presentPinCode: '',
-  nativePlace: '',
   fatherNativePlace: '',
   motherNativePlace: '',
   aboutMe: '',
@@ -170,6 +172,8 @@ const CreateProfile = () => {
   const [fieldErrors,setFieldErrors] = useState({});
   const [pinStatus,setPinStatus] = useState({});
   const [createdInfo,setCreatedInfo] = useState(null);
+  const [photos,setPhotos] = useState([]);
+  const [photoBusy,setPhotoBusy] = useState(false);
 
   const maxDOB = useMemo(() => getMaxDOBFor18Plus(), []);
   const age = useMemo(() => calculateAge(form.dateOfBirth), [form.dateOfBirth]);
@@ -255,6 +259,11 @@ const CreateProfile = () => {
     setFieldErrors({});
     setCreatedInfo(null);
 
+    if (photoBusy) {
+      setError('Please wait for the photo upload to finish.');
+      return;
+    }
+
     if (!age || age < 18) {
       setError('User must be at least 18 years old.');
       return;
@@ -273,6 +282,7 @@ const CreateProfile = () => {
     const payload = {
       firstName: form.firstName,
       lastName: form.lastName,
+      surname: form.lastName,
       email: form.email,
       phone: form.phone,
       alternativePhone: form.alternativePhone || undefined,
@@ -300,7 +310,7 @@ const CreateProfile = () => {
       jobTitle: form.jobTitle,
       jobLocation: form.jobLocation,
       industry: form.industry,
-      income: Number(form.income),
+      income: toIncomeRupees(form.income),
       incomeCurrency: 'INR',
       currentAddress: {
         streetName: form.streetName,
@@ -316,11 +326,11 @@ const CreateProfile = () => {
         country: form.presentCountry,
         pinCode: form.presentPinCode
       },
-      nativePlace: form.nativePlace,
       aboutMe: form.aboutMe,
       partnerRequirement: form.partnerRequirement,
       preferredMatch: form.preferredMatch,
-      caste: 'Mala'
+      caste: 'Mala',
+      photos: normalisePhotos(photos)
     };
 
     try {
@@ -338,6 +348,7 @@ const CreateProfile = () => {
       });
 
       setForm(initialForm);
+      setPhotos([]);
       window.scrollTo(0, 0);
     } catch (err) {
       const data = err.response?.data;
@@ -406,7 +417,7 @@ const CreateProfile = () => {
           />
           {fieldErrors.firstName && <div style={{ color: 'red' }}>{fieldErrors.firstName}</div>}
 
-          <label htmlFor="lastName">Last Name</label>
+          <label htmlFor="lastName">Surname</label>
           <input
             id="lastName"
             name="lastName"
@@ -459,6 +470,12 @@ const CreateProfile = () => {
             <div style={{ color: 'red' }}>Alternate mobile must be 10 digits</div>
           )}
           {fieldErrors.alternativePhone && <div style={{ color: 'red' }}>{fieldErrors.alternativePhone}</div>}
+        </div>
+
+        <div style={sectionStyle}>
+          <h3>Profile picture</h3>
+          <ProfilePhotoFields photos={photos} onChange={setPhotos} disabled={saving} onBusy={setPhotoBusy} />
+          {fieldErrors.photos && <div style={{ color: 'red' }}>{fieldErrors.photos}</div>}
         </div>
 
         <div style={sectionStyle}>
@@ -588,17 +605,6 @@ const CreateProfile = () => {
             ))}
           </select>
           {fieldErrors.maritalStatus && <div style={{ color: 'red' }}>{fieldErrors.maritalStatus}</div>}
-
-          <label htmlFor="nativePlace">Native Place</label>
-          <input
-            id="nativePlace"
-            name="nativePlace"
-            value={form.nativePlace}
-            onChange={handleChange}
-            style={inputStyle}
-            required
-          />
-          {fieldErrors.nativePlace && <div style={{ color: 'red' }}>{fieldErrors.nativePlace}</div>}
 
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
             <div style={{ flex: '1 1 280px' }}>
@@ -784,7 +790,7 @@ const CreateProfile = () => {
           />
           {fieldErrors.industry && <div style={{ color: 'red' }}>{fieldErrors.industry}</div>}
 
-          <label htmlFor="income">Income</label>
+          <label htmlFor="income">Annual Income (lacs)</label>
           <input
             id="income"
             type="number"
@@ -792,6 +798,9 @@ const CreateProfile = () => {
             value={form.income}
             onChange={handleChange}
             style={inputStyle}
+            min="0"
+            step="0.1"
+            placeholder="e.g. 12 or 12.5"
             required
           />
           {fieldErrors.income && <div style={{ color: 'red' }}>{fieldErrors.income}</div>}
@@ -1003,8 +1012,8 @@ const CreateProfile = () => {
           </select>
         </div>
 
-        <button type="submit" disabled={saving} style={buttonStyle}>
-          {saving ? 'Saving...' : 'Create Profile'}
+        <button type="submit" disabled={saving || photoBusy} style={buttonStyle}>
+          {saving ? 'Saving...' : photoBusy ? 'Uploading photos...' : 'Create Profile'}
         </button>
       </form>
     </div>

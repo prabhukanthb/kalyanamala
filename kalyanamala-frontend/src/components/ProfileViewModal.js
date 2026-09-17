@@ -1,8 +1,9 @@
 import React from 'react';
-import { formatHeight, prettyLabel, fullName, formatIncome } from '../utils/profileFormHelpers';
+import { formatHeight, prettyLabel, fullName, formatIncome, displaySurname } from '../utils/profileFormHelpers';
 import ProfileDownloadCard from './ProfileDownloadCard';
+import { API_ORIGIN } from '../services/apiBase';
 
-const API_BASE = 'https://kalyanamala-backend-production.up.railway.app';
+const API_BASE = API_ORIGIN;
 
 const photoSrc = (p) => (!p ? '' : typeof p === 'string' ? p : p.url || p.imageUrl || '');
 
@@ -55,7 +56,7 @@ const ProfileViewModal = ({ profile, isAdmin, onClose }) => {
   const [acct,setAcct] = React.useState({
     firstName: profile.userId?.firstName || '',
     lastName: profile.userId?.lastName || '',
-    surname: profile.userId?.surname || '',
+    surname: profile.userId?.surname || profile.userId?.lastName || '',
     email: profile.userId?.email || '',
     phone: profile.userId?.phone || '',
     alternativePhone: profile.userId?.alternativePhone || ''
@@ -207,7 +208,7 @@ const ProfileViewModal = ({ profile, isAdmin, onClose }) => {
                     <R label="Profile ID" value={profile.profileId} />
                     <R label="First Name" value={acct.firstName} />
                     <R label="Last Name" value={acct.lastName} />
-                    <R label="Surname" value={acct.surname} />
+                    <R label="Surname" value={acct.surname || displaySurname(acct, profile)} />
                     <R label="Email" value={acct.email || ''} />
                     <R label="Phone" value={acct.phone || ''} />
                     <R label="Alternate Mobile" value={acct.alternativePhone || ''} />
@@ -313,7 +314,6 @@ const ProfileViewModal = ({ profile, isAdmin, onClose }) => {
             <R label="Caste" value={profile.caste || 'Mala'} />
             <R label="Sub Caste" value={profile.subCaste || ''} />
             <R label="Siblings" value={profile.siblingsCount} />
-            <R label="Native Place" value={profile.nativePlace || ''} />
             <R label="Father's Name" value={profile.fatherName || ''} />
             <R label="Father Occupation" value={profile.fatherOccupation || ''} />
             <R label="Father Native" value={profile.fatherNativePlace || ''} />

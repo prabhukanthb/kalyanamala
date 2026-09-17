@@ -8,6 +8,7 @@ const Profile = require('../models/Profile');
 const { PASSWORD_HINT, applyDefaultPassword } = require('../utils/defaultPassword');
 const { notifyTemporaryPassword } = require('../utils/notifyPassword');
 const { generateProfileId, buildProfileSearchFilter } = require('../utils/profileId');
+const { toIncomeRupees } = require('../utils/income');
 
 // ==========================================
 // AUTH MIDDLEWARE
@@ -162,7 +163,7 @@ const profileValidation = [
   body('presentAddress.country').notEmpty().withMessage('Present country is required'),
   body('presentAddress.pinCode').matches(/^[0-9]{6}$/).withMessage('Present pin code must be 6 digits'),
 
-  body('nativePlace').trim().notEmpty().withMessage('Native place is required'),
+  body('nativePlace').optional({ checkFalsy: true }).trim(),
   body('fatherNativePlace').trim().notEmpty().withMessage("Father's native place is required"),
   body('motherNativePlace').trim().notEmpty().withMessage("Mother's native place is required"),
 
@@ -205,7 +206,7 @@ function buildProfilePayload(bodyData, reqUserId, isAdminCreate = false) {
     jobTitle: bodyData.jobTitle,
     jobLocation: bodyData.jobLocation,
     industry: bodyData.industry,
-    income: Number(bodyData.income),
+    income: toIncomeRupees(bodyData.income),
     incomeCurrency: 'INR',
 
     currentAddress: {

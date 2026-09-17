@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import html2canvas from 'html2canvas';
 import { formatHeight, fullName, prettyLabel, formatIncome } from '../utils/profileFormHelpers';
 
-const BRAND = 'Kalyanamala';
+const BRAND = 'New Kalyanamala';
 const BRAND_LINE = 'New Kalyanamala Matrimony';
 const CONTACT_PERSON = 'B. John Ratnam';
 const CONTACT_PHONE = '9440545049';
@@ -198,9 +198,9 @@ const ProfileDownloadCard = ({ profile, onClose }) => {
                   <F label="Annual Income" value={formatIncome(profile.income)} />
                 </Group>
                 <Group title="Places">
-                  <F label="Native Place" value={profile.nativePlace || ''} />
                   <F label="Siblings" value={profile.siblingsCount === 0 || profile.siblingsCount ? String(profile.siblingsCount) : ''} />
                   <F label="Present City" value={place(profile.presentAddress)} />
+                  <F label="Current City" value={place(profile.currentAddress)} />
                 </Group>
               </div>
 

@@ -27,7 +27,7 @@ const ForgotPassword = () => {
   return (
     <div style={page}>
       <div style={box}>
-      <div style={kicker}>Kalyanamala</div>
+      <div style={kicker}>New Kalyanamala</div>
       <h2 style={title}>Forgot password</h2>
       <p style={{ color: '#555', lineHeight: 1.5 }}>
         Enter your registered email or mobile number. If it matches an account, the password

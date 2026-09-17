@@ -6,7 +6,9 @@ import ProfileViewModal from '../components/ProfileViewModal';
 import ProfileDownloadCard from '../components/ProfileDownloadCard';
 import { prettyLabel } from '../utils/profileFormHelpers';
 
-const API_BASE = 'https://kalyanamala-backend-production.up.railway.app';
+import { API_ORIGIN } from '../services/apiBase';
+
+const API_BASE = API_ORIGIN;
 
 const STATUS_FILTERS = ['all', 'pending', 'approved', 'rejected', 'deleted'];
 
@@ -145,7 +147,7 @@ const AdminDashboard = () => {
       `}</style>
       <div style={hero}>
         <div>
-          <div style={{ fontSize: 13, opacity: 0.9, letterSpacing: 0.6, textTransform: 'uppercase' }}>Kalyanamala</div>
+          <div style={{ fontSize: 13, opacity: 0.9, letterSpacing: 0.6, textTransform: 'uppercase' }}>New Kalyanamala</div>
           <h1 style={{ margin: '6px 0 0', fontSize: 28 }}>Admin Dashboard</h1>
           <div style={{ marginTop: 6, opacity: 0.95 }}>
             {signedInAs ? `Signed in as ${signedInAs}` : 'Manage profiles, IDs, and approvals'}

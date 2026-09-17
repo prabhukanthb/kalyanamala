@@ -50,14 +50,6 @@ const SiteHeader = () => {
           <span className="site-mark" aria-hidden="true">NK</span>
           {BRAND}
         </Link>
-        <div className="header-cta">
-          {!isAuthenticated && (
-            <Link to="/register" className="btn-gold" onClick={() => setOpen(false)}>Register Free</Link>
-          )}
-          <button type="button" className="menu-toggle" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
-            {open ? 'Close' : 'Menu'}
-          </button>
-        </div>
         <nav className={open ? 'site-nav open' : 'site-nav'} aria-label="Main">
           {NAV.map((item) => (
             item.hash ? (
@@ -68,7 +60,7 @@ const SiteHeader = () => {
               <Link key={item.label} to={item.to} onClick={() => setOpen(false)}>{item.label}</Link>
             )
           ))}
-          {isAuthenticated ? (
+          {isAuthenticated && (
             <>
               <Link to="/profile" onClick={() => setOpen(false)}>My Profile</Link>
               {(user?.role === 'admin' || user?.role === 'subadmin') && (
@@ -77,13 +69,19 @@ const SiteHeader = () => {
               <span>Hi, {user?.firstName}</span>
               <button type="button" className="btn-ghost" onClick={handleLogout}>Logout</button>
             </>
-          ) : (
-            <>
-              <Link to="/login" onClick={() => setOpen(false)}>Login</Link>
-              <Link to="/register" className="btn-gold" onClick={() => setOpen(false)}>Register Free</Link>
-            </>
+          )}
+          {!isAuthenticated && (
+            <Link to="/login" className="nav-login" onClick={() => setOpen(false)}>Login</Link>
           )}
         </nav>
+        <div className="header-cta">
+          {!isAuthenticated && (
+            <Link to="/register" className="btn-gold" onClick={() => setOpen(false)}>Register Free</Link>
+          )}
+          <button type="button" className="menu-toggle" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+            {open ? 'Close' : 'Menu'}
+          </button>
+        </div>
       </div>
     </header>
   );

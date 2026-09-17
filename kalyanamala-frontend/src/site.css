@@ -93,18 +93,25 @@
 }
 
 .header-cta {
-  display: none;
-  margin-left: auto;
+  display: flex;
+  margin-left: 10px;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
+}
+
+.header-cta .btn-gold {
+  white-space: nowrap;
 }
 
 .site-nav {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 14px;
+  gap: 4px 12px;
   align-items: center;
+  justify-content: flex-end;
   margin-left: auto;
+  font-size: 15px;
 }
 
 .site-nav a,
@@ -543,16 +550,16 @@
     grid-template-columns: 1fr 1fr;
   }
 
-  .header-cta {
-    display: flex;
+  .nav-login {
+    display: none;
   }
 
   .menu-toggle {
     display: inline-flex;
   }
 
-  .site-nav .btn-gold {
-    display: none;
+  .site-nav.open .nav-login {
+    display: inline;
   }
 
   .site-nav {

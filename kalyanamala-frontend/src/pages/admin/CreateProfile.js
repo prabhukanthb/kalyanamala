@@ -14,6 +14,7 @@ import {
   toIncomeRupees
 } from '../../utils/profileFormHelpers';
 import { API_ORIGIN } from '../../services/apiBase';
+import ProfilePhotoFields, { normalisePhotos } from '../../components/ProfilePhotoFields';
 
 const API_BASE = API_ORIGIN;
 
@@ -171,6 +172,8 @@ const CreateProfile = () => {
   const [fieldErrors,setFieldErrors] = useState({});
   const [pinStatus,setPinStatus] = useState({});
   const [createdInfo,setCreatedInfo] = useState(null);
+  const [photos,setPhotos] = useState([]);
+  const [photoBusy,setPhotoBusy] = useState(false);
 
   const maxDOB = useMemo(() => getMaxDOBFor18Plus(), []);
   const age = useMemo(() => calculateAge(form.dateOfBirth), [form.dateOfBirth]);
@@ -256,6 +259,11 @@ const CreateProfile = () => {
     setFieldErrors({});
     setCreatedInfo(null);
 
+    if (photoBusy) {
+      setError('Please wait for the photo upload to finish.');
+      return;
+    }
+
     if (!age || age < 18) {
       setError('User must be at least 18 years old.');
       return;
@@ -321,7 +329,8 @@ const CreateProfile = () => {
       aboutMe: form.aboutMe,
       partnerRequirement: form.partnerRequirement,
       preferredMatch: form.preferredMatch,
-      caste: 'Mala'
+      caste: 'Mala',
+      photos: normalisePhotos(photos)
     };
 
     try {
@@ -339,6 +348,7 @@ const CreateProfile = () => {
       });
 
       setForm(initialForm);
+      setPhotos([]);
       window.scrollTo(0, 0);
     } catch (err) {
       const data = err.response?.data;
@@ -460,6 +470,12 @@ const CreateProfile = () => {
             <div style={{ color: 'red' }}>Alternate mobile must be 10 digits</div>
           )}
           {fieldErrors.alternativePhone && <div style={{ color: 'red' }}>{fieldErrors.alternativePhone}</div>}
+        </div>
+
+        <div style={sectionStyle}>
+          <h3>Profile picture</h3>
+          <ProfilePhotoFields photos={photos} onChange={setPhotos} disabled={saving} onBusy={setPhotoBusy} />
+          {fieldErrors.photos && <div style={{ color: 'red' }}>{fieldErrors.photos}</div>}
         </div>
 
         <div style={sectionStyle}>
@@ -996,8 +1012,8 @@ const CreateProfile = () => {
           </select>
         </div>
 
-        <button type="submit" disabled={saving} style={buttonStyle}>
-          {saving ? 'Saving...' : 'Create Profile'}
+        <button type="submit" disabled={saving || photoBusy} style={buttonStyle}>
+          {saving ? 'Saving...' : photoBusy ? 'Uploading photos...' : 'Create Profile'}
         </button>
       </form>
     </div>

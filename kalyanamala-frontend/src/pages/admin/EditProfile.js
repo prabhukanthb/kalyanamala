@@ -15,6 +15,7 @@ import {
   toIncomeRupees
 } from '../../utils/profileFormHelpers';
 import { API_ORIGIN } from '../../services/apiBase';
+import ProfilePhotoFields, { normalisePhotos } from '../../components/ProfilePhotoFields';
 
 const API_BASE = API_ORIGIN;
 
@@ -178,6 +179,8 @@ const EditProfile = () => {
     showInSearch: false,
     approvalStatus: 'pending'
   });
+  const [photos,setPhotos] = useState([]);
+  const [photoBusy,setPhotoBusy] = useState(false);
 
   const maxDOB = useMemo(() => getMaxDOBFor18Plus(), []);
   const age = useMemo(() => calculateAge(form.dateOfBirth), [form.dateOfBirth]);
@@ -192,6 +195,7 @@ const EditProfile = () => {
         const p = res.data.profile;
 
         setForm(profileToForm(p));
+        setPhotos(Array.isArray(p.photos) ? p.photos : []);
       } catch (err) {
         setError(err.response?.data?.message || err.response?.data?.error || 'Failed to load profile');
       } finally {
@@ -276,6 +280,11 @@ const EditProfile = () => {
     setError('');
     setFieldErrors({});
 
+    if (photoBusy) {
+      setError('Please wait for the photo upload to finish.');
+      return;
+    }
+
     if (!age || age < 18) {
       setError('User must be at least 18 years old.');
       return;
@@ -326,7 +335,8 @@ const EditProfile = () => {
       preferredMatch: form.preferredMatch,
       approvalStatus: form.approvalStatus,
       showInSearch: form.showInSearch,
-      caste: 'Mala'
+      caste: 'Mala',
+      photos: normalisePhotos(photos)
     };
 
     try {
@@ -370,6 +380,11 @@ const EditProfile = () => {
       )}
 
       <form onSubmit={handleSave}>
+        <div style={sectionStyle}>
+          <h3>Profile picture</h3>
+          <ProfilePhotoFields photos={photos} onChange={setPhotos} disabled={saving} onBusy={setPhotoBusy} />
+        </div>
+
         <div style={sectionStyle}>
           <h3>Basic Details</h3>
 
@@ -596,8 +611,8 @@ const EditProfile = () => {
           </select>
         </div>
 
-        <button type="submit" disabled={saving} style={buttonStyle}>
-          {saving ? 'Saving...' : 'Save Profile'}
+        <button type="submit" disabled={saving || photoBusy} style={buttonStyle}>
+          {saving ? 'Saving...' : photoBusy ? 'Uploading photos...' : 'Save Profile'}
         </button>
       </form>
     </div>

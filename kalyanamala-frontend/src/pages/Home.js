@@ -158,7 +158,7 @@ const Home = () => {
             Guided by <strong>{ORG}</strong>,
             we help every candidate and every caring parent
             discover a meaningful bond—
-            with <em>dignity</em> in every step,
+            with <em>dignity</em> in every step,{' '}
             <em>privacy</em> in every moment,
             and a <em>trusted hand</em> to hold throughout the journey.
           </p>

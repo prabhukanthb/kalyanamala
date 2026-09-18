@@ -1,5 +1,5 @@
 import React from 'react';
-import { BRAND, EMAIL, ORG } from '../siteConfig';
+import { BRAND, EMAIL, ORG, REGISTRATION_FEE, RENEWAL_FEE } from '../siteConfig';
 
 const LegalPage = ({ title, children }) => (
   <div className="section" style={{ minHeight: '60vh' }}>
@@ -22,6 +22,6 @@ export const Terms = () => (
 
 export const Refund = () => (
   <LegalPage title="Refund Policy">
-    <p>Registration to create a biodata is free. Paid Premium or Assisted fees, when taken, are explained in writing before payment. Refunds for unused assisted time are considered by the Vijayawada office on a case-by-case basis. Email {EMAIL}.</p>
+    <p>Registration is {REGISTRATION_FEE}. Annual renewal is {RENEWAL_FEE}. Fees are explained by the Vijayawada office before payment. Refunds are considered by the Vijayawada office on a case-by-case basis. Email {EMAIL}.</p>
   </LegalPage>
 );

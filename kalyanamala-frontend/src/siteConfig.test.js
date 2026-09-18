@@ -3,32 +3,29 @@ import { BRAND, H1, ORG, YEARS_OF_SERVICE } from './siteConfig';
 test('public brand is New Kalyanamala mala matrimony in vijayawada', () => {
   expect(BRAND).toBe('New Kalyanamala');
   expect(ORG).toBe('Kalyanamala Seva Samstha');
-  expect(YEARS_OF_SERVICE).toBe(20);
+  expect(YEARS_OF_SERVICE).toBe(15);
   expect(H1).toBe('Where families meet, hopes blossom, and lifelong bonds begin.');
   expect(H1).toMatch(/lifelong bonds/);
   expect(H1).not.toMatch(/Unique profile IDs/);
 });
 
-test('Vijayawada office contact and branches are published', () => {
-  const { BRANCH_ADDRESS, BRANCHES, HELPLINE_TEL, HELPLINE_DISPLAY } = require('./siteConfig');
+test('Vijayawada is the only published office', () => {
+  const {
+    BRANCH_ADDRESS,
+    BRANCHES,
+    HELPLINE_TEL,
+    HELPLINE_DISPLAY,
+    REGISTRATION_FEE,
+    RENEWAL_FEE
+  } = require('./siteConfig');
   expect(HELPLINE_DISPLAY.replace(/\s/g, '')).toBe('9440545049');
   expect(HELPLINE_TEL).toBe('tel:+919440545049');
   expect(BRANCH_ADDRESS).toMatch(/Manohara Apartments/);
   expect(BRANCH_ADDRESS).toMatch(/Machavaram/);
   expect(BRANCH_ADDRESS).toMatch(/520004/);
-  expect(BRANCHES.map((b) => b.city)).toEqual([
-    'Vijayawada',
-    'Rajamundry',
-    'Vishakapatnam',
-    'Gudivada',
-    'Guntur',
-    'Chirala',
-    'Ongole',
-    'Nellore',
-    'Bangalore',
-    'Chennai',
-    'United States'
-  ]);
+  expect(BRANCHES.map((b) => b.city)).toEqual(['Vijayawada']);
+  expect(REGISTRATION_FEE).toMatch(/3,000/);
+  expect(RENEWAL_FEE).toMatch(/1,500/);
 });
 
 test('homepage no longer promotes the retired main-page chips', () => {
@@ -45,6 +42,15 @@ test('homepage no longer promotes the retired main-page chips', () => {
   expect(home).toMatch(/Mala community/);
   expect(home).toMatch(/trusted hand/);
   expect(home).not.toMatch(/Your family's mala Matrimony/);
+  expect(home).not.toMatch(/Register Free/);
+  expect(home).not.toMatch(/Horoscope matching/);
+  expect(home).not.toMatch(/twenty years/);
+  expect(home).not.toMatch(/Verified profiles reviewed/);
+  expect(home).not.toMatch(/Our branches/);
+  expect(home).toMatch(/fifteen years/);
+  expect(home).toMatch(/We introduce bride or groom/);
+  expect(home).toMatch(/REGISTRATION_FEE/);
+  expect(home).toMatch(/RENEWAL_FEE/);
 });
 
 test('header topbar no longer shows the Machavaram location line', () => {

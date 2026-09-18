@@ -7,6 +7,7 @@ import ProfileViewModal from '../components/ProfileViewModal';
 import { fullName } from '../utils/profileFormHelpers';
 
 import { API_ORIGIN } from '../services/apiBase';
+import { REGISTER_CTA, REGISTRATION_FEE } from '../siteConfig';
 
 const API_BASE = API_ORIGIN;
 
@@ -141,8 +142,8 @@ const BrowseProfiles = () => {
       <div style={{ maxWidth: 640, margin: '40px auto', padding: 20 }}>
         <div style={{ marginBottom: 8, fontSize: 13, letterSpacing: 1.4, textTransform: 'uppercase', color: '#C9A227' }}>New Kalyanamala</div>
         <h2 style={{ fontFamily: 'Georgia, serif', color: '#8B1E3F' }}>Search Profiles</h2>
-        <p>Register free to view verified Mala matches. Parents may create the login. Phone numbers stay private.</p>
-        <Link to="/register" style={{ ...btn, display: 'inline-block', textDecoration: 'none' }}>Register Free</Link>
+        <p>Register to view Mala matches. Registration is {REGISTRATION_FEE}. Parents may create the login. Phone numbers stay private.</p>
+        <Link to="/register" style={{ ...btn, display: 'inline-block', textDecoration: 'none' }}>{REGISTER_CTA}</Link>
         {' '}
         <Link to="/login" style={{ ...ghostBtn, display: 'inline-block', textDecoration: 'none' }}>Login</Link>
       </div>

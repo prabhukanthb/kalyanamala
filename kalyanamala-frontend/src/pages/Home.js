@@ -6,7 +6,6 @@ import { API_ORIGIN } from '../services/apiBase';
 import { fullName } from '../utils/profileFormHelpers';
 import {
   BRANCH_ADDRESS_LINES,
-  BRANCHES,
   BRAND,
   CITIES,
   EMAIL,
@@ -15,6 +14,9 @@ import {
   MAP_EMBED,
   MOTHER_TONGUES,
   ORG,
+  REGISTER_CTA,
+  REGISTRATION_FEE,
+  RENEWAL_FEE,
   SUB_COMMUNITIES,
   WHATSAPP_HREF,
   YEARS_OF_SERVICE
@@ -46,20 +48,12 @@ const FAQ = [
     a: 'Yes. Many biodata are completed by mothers and fathers. You may register in the candidate’s name, keep phone numbers private, and call the Vijayawada office whenever you need a person to walk you through a match.'
   },
   {
-    q: 'How do you verify a profile?',
-    a: 'Our team reviews photographs, education, family details and contact information before a profile is shown in search. We do not publish unverified biodata.'
-  },
-  {
     q: 'Will my phone number be public?',
-    a: 'No. Mobile numbers and email stay hidden on browse cards and downloadable biodata. Contact is shared only when both families agree, or through our assisted service.'
+    a: 'No. Mobile numbers and email stay hidden on browse cards and downloadable biodata. Contact is shared only when both families agree, or through our Vijayawada office.'
   },
   {
-    q: 'Do you match horoscopes?',
-    a: 'Yes. On request we arrange horoscope matching and share the outcome with both families. It is optional; some Christian Mala families prefer church and family references instead.'
-  },
-  {
-    q: 'Is registration really free?',
-    a: 'Creating a biodata and appearing in search after verification is free. Premium and Assisted plans add more introductions, priority support and help from the Vijayawada branch.'
+    q: 'What does registration cost?',
+    a: `Registration is ${REGISTRATION_FEE}. Annual renewal is ${RENEWAL_FEE}. Call the Vijayawada office if you have questions about payment.`
   }
 ];
 
@@ -108,17 +102,17 @@ const Home = () => {
     if (profiles.length) {
       return profiles.map((p) => ({
         id: p.profileId || p._id,
-        name: fullName(p) || 'Verified member',
+        name: fullName(p) || (p.gender === 'female' ? 'Bride' : p.gender === 'male' ? 'Groom' : 'Member'),
         city: p.currentAddress?.city || p.presentAddress?.city || '',
         work: p.occupation || p.highestEducation || '',
         photo: photoSrc((p.photos || []).find((x) => x.isPrimary) || (p.photos || [])[0])
       }));
     }
     return [
-      { id: 'vja', name: 'Verified bride', city: 'Vijayawada', work: 'Teacher', photo: FEATURE_PHOTOS[0] },
-      { id: 'hyd', name: 'Verified groom', city: 'Hyderabad', work: 'Engineer', photo: FEATURE_PHOTOS[1] },
-      { id: 'gnt', name: 'Verified bride', city: 'Guntur', work: 'Nurse', photo: FEATURE_PHOTOS[2] },
-      { id: 'nri', name: 'Verified groom', city: 'NRI', work: 'IT professional', photo: FEATURE_PHOTOS[3] }
+      { id: 'vja', name: 'Bride', city: 'Vijayawada', work: 'Teacher', photo: FEATURE_PHOTOS[0] },
+      { id: 'gnt', name: 'Groom', city: 'Vijayawada', work: 'Engineer', photo: FEATURE_PHOTOS[1] },
+      { id: 'hyd', name: 'Bride', city: 'Hyderabad', work: 'Nurse', photo: FEATURE_PHOTOS[2] },
+      { id: 'nri', name: 'Groom', city: 'Guntur', work: 'IT professional', photo: FEATURE_PHOTOS[3] }
     ];
   }, [profiles]);
 
@@ -150,7 +144,7 @@ const Home = () => {
             and <em>lifelong bonds</em> begin.
           </h1>
           <p className="lede verse">
-            For twenty years in <strong>Vijayawada</strong>,{' '}
+            For fifteen years in <strong>Vijayawada</strong>,{' '}
             <strong>{BRAND}</strong> has lovingly brought together
             hearts, hopes, and families within the <strong>Mala community</strong>.
           </p>
@@ -163,7 +157,7 @@ const Home = () => {
             and a <em>trusted hand</em> to hold throughout the journey.
           </p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 22 }}>
-            <Link to={registerPath} className="btn-gold">Register Free</Link>
+            <Link to={registerPath} className="btn-gold">{REGISTER_CTA}</Link>
             <a href={HELPLINE_TEL} className="btn-ghost">Call {HELPLINE_DISPLAY}</a>
           </div>
           <form className="search-widget" onSubmit={submitSearch}>
@@ -213,7 +207,7 @@ const Home = () => {
         <div className="counters">
           {[
             { n: `${YEARS_OF_SERVICE}+`, l: 'Years of service from Vijayawada' },
-            { n: 'Verified', l: 'Verified profiles reviewed by our team' },
+            { n: 'Bride or Groom', l: 'We introduce bride or groom to families' },
             { n: 'Marriages', l: 'Successful marriages with parents involved' },
             { n: 'Private', l: 'Privacy assurance — phone and email stay hidden' }
           ].map((item) => (
@@ -232,11 +226,11 @@ const Home = () => {
           <div className="why-grid">
             {[
               { t: 'Only the Mala community', d: 'Hindu, Christian, Ambedkarist and Buddhist Mala families search among their own people — not a mixed general portal.' },
-              { t: `Backed by ${ORG}`, d: 'An institution with a Vijayawada main branch, not a faceless app. You can walk in and speak to someone.' },
-              { t: 'Manual verification', d: 'Photographs, education and family details are checked before a profile is shown in search.' },
+              { t: `Backed by ${ORG}`, d: 'An institution with a Vijayawada office, not a faceless app. You can walk in and speak to someone.' },
+              { t: 'We introduce bride or groom', d: 'Our team introduces a bride or a groom to the family, with dignity and a person you can call.' },
               { t: 'Privacy in your control', d: 'Mobile numbers are hidden until both families agree. Downloadable biodata never prints phone or email.' },
-              { t: 'Horoscope matching', d: 'On request we arrange matching and share the result with both houses. It remains optional.' },
-              { t: 'A person on the phone', d: 'Call or WhatsApp the Vijayawada office. Assisted members get a coordinator for parent meetings.' }
+              { t: 'Parents together', d: 'Mothers and fathers can complete biodata and stay involved at every step of the search.' },
+              { t: 'A person on the phone', d: 'Call or WhatsApp the Vijayawada office. We help families meet only when both sides are ready.' }
             ].map((item) => (
               <article key={item.t} className="why-card">
                 <h3>{item.t}</h3>
@@ -253,10 +247,10 @@ const Home = () => {
           <p className="sub">Four clear steps. Parents are welcome at every stage.</p>
           <div className="steps">
             {[
-              { n: '1', t: 'Register free', d: 'Create a login with name, surname and mobile. No charge to begin.' },
-              { n: '2', t: 'Complete biodata', d: 'Add family, education, present address and partner requirement. Our team verifies it.' },
-              { n: '3', t: 'See matches', d: 'Search by city, age and community, or ask us to shortlist for the parents.' },
-              { n: '4', t: 'Meet with support', d: 'Speak, visit the Vijayawada branch, and take the next step only when both families are ready.' }
+              { n: '1', t: 'Register', d: `Create a login with name, surname and mobile. Registration is ${REGISTRATION_FEE}.` },
+              { n: '2', t: 'Complete biodata', d: 'Add family, education, present address and partner requirement.' },
+              { n: '3', t: 'See matches', d: 'Search by city, age and community, or ask us to introduce a bride or groom.' },
+              { n: '4', t: 'Meet with support', d: 'Speak, visit the Vijayawada office, and take the next step only when both families are ready.' }
             ].map((item) => (
               <article key={item.n} className="step-card">
                 <div className="step-num">{item.n}</div>
@@ -270,11 +264,11 @@ const Home = () => {
 
       <section className="band" id="featured">
         <div className="section">
-          <h2>Featured verified profiles</h2>
+          <h2>Brides and grooms we introduce</h2>
           <p className="sub">
             {isAuthenticated
               ? 'A sample of members currently on New Kalyanamala.'
-              : 'Register free to open full verified biodata. Phone numbers stay private.'}
+              : `Register to see biodata. Registration is ${REGISTRATION_FEE}. Phone numbers stay private.`}
           </p>
           <div className="carousel">
             {featured.map((p) => (
@@ -314,38 +308,28 @@ const Home = () => {
 
       <section className="band" id="membership">
         <div className="section">
-          <h2>Membership plans</h2>
-          <p className="sub">Start free. Move to Premium or Assisted when the family wants more introductions.</p>
+          <h2>Membership</h2>
+          <p className="sub">One Vijayawada office. Registration and yearly renewal — no free plan.</p>
           <div className="plans">
-            <article className="plan-card">
-              <h3>Free</h3>
-              <p>For families beginning a search.</p>
-              <ul>
-                <li>Create and verify a biodata</li>
-                <li>Appear in search after review</li>
-                <li>Limited match views</li>
-              </ul>
-              <Link to="/register" className="btn-maroon">Register Free</Link>
-            </article>
             <article className="plan-card featured">
-              <h3>Premium</h3>
-              <p>For active searches that need more reach.</p>
+              <h3>Registration</h3>
+              <p>{REGISTRATION_FEE}</p>
               <ul>
-                <li>More profile views and highlights</li>
-                <li>Priority in search</li>
+                <li>Create a biodata for a bride or groom</li>
+                <li>Appear in search for Mala families</li>
                 <li>Helpline support from Vijayawada</li>
               </ul>
-              <Link to="/#contact" className="btn-gold">Talk to us</Link>
+              <Link to="/register" className="btn-gold">{REGISTER_CTA}</Link>
             </article>
             <article className="plan-card">
-              <h3>Assisted</h3>
-              <p>A coordinator works with both sets of parents.</p>
+              <h3>Annual renewal</h3>
+              <p>{RENEWAL_FEE}</p>
               <ul>
-                <li>Shortlists prepared for you</li>
-                <li>Horoscope matching on request</li>
-                <li>Meetings arranged at the branch</li>
+                <li>Keep the profile active for another year</li>
+                <li>Continue introductions with our team</li>
+                <li>Same privacy and Vijayawada support</li>
               </ul>
-              <Link to="/#contact" className="btn-maroon">Request assisted search</Link>
+              <Link to="/#contact" className="btn-maroon">Talk to us</Link>
             </article>
           </div>
         </div>
@@ -357,7 +341,7 @@ const Home = () => {
           <p className="sub">Families who found a match with patience, privacy and the support of {ORG}.</p>
           <div className="stories">
             {[
-              { names: 'Suresh & Anitha', place: 'Vijayawada', quote: 'Our parents met at the branch first. We felt looked after, not rushed.' },
+              { names: 'Suresh & Anitha', place: 'Vijayawada', quote: 'Our parents met at the office first. We felt looked after, not rushed.' },
               { names: 'Ravi & Lakshmi', place: 'Guntur · Hyderabad', quote: 'They kept our numbers private until both houses were comfortable. That mattered to my mother.' },
               { names: 'Praveen & Mary', place: 'Christian Mala families', quote: 'We needed a community match with shared faith. New Kalyanamala understood that from the first call.' }
             ].map((s, i) => (
@@ -378,12 +362,12 @@ const Home = () => {
         <div className="section">
           <h2>About {ORG}</h2>
           <p className="sub">
-            {ORG} has served Mala families from its main branch in Vijayawada for {YEARS_OF_SERVICE} years,
-            with offices across Andhra Pradesh, Bangalore, Chennai and the United States.
+            {ORG} has served Mala families from its Vijayawada office for {YEARS_OF_SERVICE} years.
             {' '}{BRAND} is the matrimonial service of the samstha — not a marketplace for every community,
             and not a casual dating site. Elders, working professionals and NRIs use the same careful process:
-            a verified biodata, a conversation with our team, and an introduction only when both families wish it.
+            a biodata, a conversation with our team, and an introduction only when both families wish it.
             We exist so that a Mala bride or groom, and the parents who stand with them, can search with trust.
+            Our only office is in Vijayawada.
           </p>
         </div>
       </section>
@@ -395,10 +379,10 @@ const Home = () => {
               <h2>Safety and anti-fraud</h2>
               <p className="sub">We would rather delay a profile than publish a doubtful one.</p>
               <ul>
-                <li>Unverified photographs are not shown in search.</li>
+                <li>Photographs that do not belong to the member are not shown in search.</li>
                 <li>We never ask you to transfer money to a member or to a private account for a “priority match”.</li>
                 <li>Report a suspicious profile to the Vijayawada office; we will take it down while we check.</li>
-                <li>Meet in a public place or at the branch. Tell a family member where you are going.</li>
+                <li>Meet in a public place or at the Vijayawada office. Tell a family member where you are going.</li>
               </ul>
             </div>
             <div className="why-card">
@@ -416,10 +400,9 @@ const Home = () => {
           <div className="why-grid">
             {[
               { t: 'Biodata help', d: 'Sit with our team in Vijayawada to complete education, family and partner requirement clearly.' },
-              { t: 'Verification', d: 'Document and photograph checks before a profile is searchable.' },
-              { t: 'Horoscope matching', d: 'Optional matching shared with both families.' },
-              { t: 'Parent meetings', d: 'Assisted members can meet at the main branch with a coordinator present.' },
-              { t: 'NRI support', d: 'Families abroad can search Telugu Mala matches while parents handle meetings here.' },
+              { t: 'Introductions', d: 'We introduce a bride or a groom to the family when both sides are ready.' },
+              { t: 'Parent meetings', d: 'Families can meet at the Vijayawada office with our team present.' },
+              { t: 'NRI support', d: 'Families abroad can search Telugu Mala matches while parents handle meetings at the Vijayawada office.' },
               { t: 'Second marriage', d: 'Discreet search for divorced or widowed members, with the same privacy rules.' }
             ].map((item) => (
               <article key={item.t} className="why-card">
@@ -433,8 +416,8 @@ const Home = () => {
 
       <section className="band-cream" id="contact">
         <div className="section">
-          <h2>Vijayawada main branch</h2>
-          <p className="sub">Walk in at Manohara Apartments, Machavaram. Call or WhatsApp {HELPLINE_DISPLAY} from any of our branches.</p>
+          <h2>Vijayawada office</h2>
+          <p className="sub">Walk in at Manohara Apartments, Machavaram. Call or WhatsApp {HELPLINE_DISPLAY}. Our only office is in Vijayawada.</p>
           <div className="branch-grid">
             <div>
               <p><strong>{ORG}</strong></p>
@@ -445,28 +428,15 @@ const Home = () => {
               <p>WhatsApp: <a href={WHATSAPP_HREF} target="_blank" rel="noreferrer">{HELPLINE_DISPLAY}</a></p>
               <p>Email: <a href={`mailto:${EMAIL}`}>{EMAIL}</a></p>
               <p>Walk in with the family. Appointments are preferred on weekdays.</p>
-              <Link to="/register" className="btn-gold">Register Free</Link>
+              <Link to="/register" className="btn-gold">{REGISTER_CTA}</Link>
             </div>
             <iframe
               className="map-frame"
-              title="Vijayawada main branch map"
+              title="Vijayawada office map"
               src={MAP_EMBED}
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
             />
-          </div>
-          <h3 className="branch-heading">Our branches</h3>
-          <p className="sub">Andhra Pradesh, Bangalore, Chennai and the United States — one samstha, the same careful process.</p>
-          <div className="branch-list">
-            {BRANCHES.map((b) => (
-              <Link
-                key={b.city}
-                className={b.main ? 'branch-pill main' : 'branch-pill'}
-                to={`/browse?${b.query}`}
-              >
-                {b.city}{b.main ? ' · Main' : ''}
-              </Link>
-            ))}
           </div>
         </div>
       </section>
@@ -487,9 +457,9 @@ const Home = () => {
 
       <section className="band-maroon cta-band" id="register-cta">
         <h2>Begin a careful search for your son or daughter</h2>
-        <p>Register free. Talk to {ORG} in Vijayawada whenever you need a person, not only a website.</p>
+        <p>Registration is {REGISTRATION_FEE}. Annual renewal is {RENEWAL_FEE}. Talk to {ORG} in Vijayawada whenever you need a person, not only a website.</p>
         <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', marginTop: 18 }}>
-          <Link to="/register" className="btn-gold">Register Free</Link>
+          <Link to="/register" className="btn-gold">{REGISTER_CTA}</Link>
           <a href={HELPLINE_TEL} className="btn-ghost">Call {HELPLINE_DISPLAY}</a>
         </div>
       </section>
@@ -497,7 +467,7 @@ const Home = () => {
       {!isAuthenticated && (
         <div className="mobile-register">
           <a className="btn-ghost" href={HELPLINE_TEL}>Call</a>
-          <Link className="btn-gold" to="/register">Register Free</Link>
+          <Link className="btn-gold" to="/register">{REGISTER_CTA}</Link>
         </div>
       )}
     </div>

@@ -341,7 +341,7 @@ const Home = () => {
           <p className="sub">Families who found a match with patience, privacy and the support of {ORG}.</p>
           <div className="stories">
             {[
-              { names: 'Suresh & Anitha', place: 'Vijayawada', quote: 'Our parents met at the branch first. We felt looked after, not rushed.' },
+              { names: 'Suresh & Anitha', place: 'Vijayawada', quote: 'Our parents met at the office first. We felt looked after, not rushed.' },
               { names: 'Ravi & Lakshmi', place: 'Guntur · Hyderabad', quote: 'They kept our numbers private until both houses were comfortable. That mattered to my mother.' },
               { names: 'Praveen & Mary', place: 'Christian Mala families', quote: 'We needed a community match with shared faith. New Kalyanamala understood that from the first call.' }
             ].map((s, i) => (

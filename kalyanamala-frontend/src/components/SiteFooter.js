@@ -6,6 +6,7 @@ import {
   HELPLINE_DISPLAY,
   HELPLINE_TEL,
   ORG,
+  REGISTER_CTA,
   WHATSAPP_HREF
 } from '../siteConfig';
 
@@ -14,13 +15,13 @@ const SiteFooter = () => (
     <div className="footer-grid">
       <div>
         <strong>{BRAND}</strong>
-        <p>Exclusive mala matrimony, owned and operated by {ORG}. Main office at Manohara Apartments, Machavaram, Vijayawada, with branches across Andhra Pradesh, Bangalore, Chennai and the United States.</p>
+        <p>Exclusive mala matrimony, owned and operated by {ORG}. Office at Manohara Apartments, Machavaram, Vijayawada — our only office.</p>
       </div>
       <div>
         <strong>Explore</strong>
         <p><Link to="/">Home</Link></p>
         <p><Link to="/browse">Search Profiles</Link></p>
-        <p><Link to="/register">Register Free</Link></p>
+        <p><Link to="/register">{REGISTER_CTA}</Link></p>
         <p><Link to="/login">Login</Link></p>
       </div>
       <div>
@@ -32,7 +33,7 @@ const SiteFooter = () => (
       <div>
         <strong>Contact</strong>
         <p><a href={HELPLINE_TEL}>{HELPLINE_DISPLAY}</a></p>
-        <p><a href={WHATSAPP_HREF} target="_blank" rel="noreferrer">WhatsApp the branch</a></p>
+        <p><a href={WHATSAPP_HREF} target="_blank" rel="noreferrer">WhatsApp the office</a></p>
         <p><a href={`mailto:${EMAIL}`}>{EMAIL}</a></p>
         <p>
           <a href="https://facebook.com" aria-label="Facebook" target="_blank" rel="noreferrer">Facebook</a>

@@ -1,8 +1,11 @@
 export const BRAND = 'New Kalyanamala';
 export const BRAND_LINE = 'New Kalyanamala Matrimony';
 export const ORG = 'Kalyanamala Seva Samstha';
-export const YEARS_OF_SERVICE = 20;
+export const YEARS_OF_SERVICE = 15;
 export const H1 = 'Where families meet, hopes blossom, and lifelong bonds begin.';
+export const REGISTRATION_FEE = '₹3,000/-';
+export const RENEWAL_FEE = '₹1,500/-';
+export const REGISTER_CTA = 'Register';
 
 export const HELPLINE_DISPLAY = '94405 45049';
 export const HELPLINE_TEL = 'tel:+919440545049';
@@ -20,17 +23,7 @@ export const MAP_EMBED =
   'https://maps.google.com/maps?q=31-12-9%2F1%2C%20Manohara%20Apartments%2C%20Machavaram%20Down%2C%20Vijayawada%2C%20Andhra%20Pradesh%20520004&z=17&output=embed';
 
 export const BRANCHES = [
-  { city: 'Vijayawada', main: true, query: 'city=Vijayawada' },
-  { city: 'Rajamundry', query: 'city=Rajahmundry' },
-  { city: 'Vishakapatnam', query: 'city=Visakhapatnam' },
-  { city: 'Gudivada', query: 'city=Gudivada' },
-  { city: 'Guntur', query: 'city=Guntur' },
-  { city: 'Chirala', query: 'city=Chirala' },
-  { city: 'Ongole', query: 'city=Ongole' },
-  { city: 'Nellore', query: 'city=Nellore' },
-  { city: 'Bangalore', query: 'city=Bangalore' },
-  { city: 'Chennai', query: 'city=Chennai' },
-  { city: 'United States', query: 'city=NRI' }
+  { city: 'Vijayawada', main: true, query: 'city=Vijayawada' }
 ];
 
 export const CITIES = [

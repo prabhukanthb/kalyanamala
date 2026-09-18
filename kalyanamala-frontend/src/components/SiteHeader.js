@@ -1,13 +1,13 @@
 import React, { useContext, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { BRAND, HELPLINE_DISPLAY, HELPLINE_TEL } from '../siteConfig';
+import { BRAND, HELPLINE_DISPLAY, HELPLINE_TEL, REGISTER_CTA } from '../siteConfig';
 
 const NAV = [
   { label: 'Home', to: '/' },
   { label: 'About Us', hash: 'about' },
   { label: 'Search Profiles', to: '/browse' },
-  { label: 'Membership Plans', hash: 'membership' },
+  { label: 'Membership', hash: 'membership' },
   { label: 'Success Stories', hash: 'stories' },
   { label: 'Services', hash: 'services' },
   { label: 'Contact Us', hash: 'contact' }
@@ -75,7 +75,7 @@ const SiteHeader = () => {
         </nav>
         <div className="header-cta">
           {!isAuthenticated && (
-            <Link to="/register" className="btn-gold" onClick={() => setOpen(false)}>Register Free</Link>
+            <Link to="/register" className="btn-gold" onClick={() => setOpen(false)}>{REGISTER_CTA}</Link>
           )}
           <button type="button" className="menu-toggle" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
             {open ? 'Close' : 'Menu'}
